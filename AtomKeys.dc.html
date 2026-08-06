@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"><style>@keyframes atomShimmer{0%,100%{opacity:.14}50%{opacity:.55}}</style></helmet>
+<div style="{{ wrap }}">
+  <sc-if value="{{ showStrip }}" hint-placeholder-val="{{ true }}">
+    <div style="{{ stripStyle }}">
+      <div style="{{ dotsBtn }}">⋯</div>
+      <div style="{{ chipRow }}">
+        <sc-for list="{{ chips }}" as="c" hint-placeholder-count="3">
+          <div style="{{ c.style }}">
+            <span style="{{ c.textStyle }}">{{ c.t }}</span>
+            <sc-if value="{{ c.sub }}"><div style="{{ subDots }}">·<span>·</span>·</div></sc-if>
+          </div>
+        </sc-for>
+      </div>
+      <div style="{{ micBtn }}">◉</div>
+    </div>
+  </sc-if>
+  <sc-for list="{{ rows }}" as="row" hint-placeholder-count="4">
+    <sc-if value="{{ row.isLine }}"><div style="{{ lineStyle }}"></div></sc-if>
+    <sc-if value="{{ row.isKeys }}">
+      <div style="{{ row.style }}">
+        <sc-for list="{{ row.keys }}" as="k" hint-placeholder-count="10">
+          <div style="{{ k.style }}">
+            <span style="{{ k.labelStyle }}">{{ k.label }}</span>
+            <sc-if value="{{ k.hint }}"><span style="{{ hintStyle }}">{{ k.hint }}</span></sc-if>
+            <sc-if value="{{ k.pop }}"><div style="{{ popStyle }}">{{ k.label }}</div></sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </sc-if>
+  </sc-for>
+  <sc-if value="{{ hasGesture }}">
+    <div style="{{ trailStyle }}"></div>
+    <div style="{{ pillStyle }}">{{ gestureLabel }}</div>
+  </sc-if>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:412,&quot;height&quot;:300},&quot;theme&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;},&quot;layer&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;letters&quot;,&quot;symbols&quot;,&quot;emoji&quot;],&quot;default&quot;:&quot;letters&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;shift&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;size&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;S&quot;,&quot;M&quot;,&quot;L&quot;,&quot;XL&quot;],&quot;default&quot;:&quot;L&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;spaceLabel&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;atom&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;showStrip&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;middleRow&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;numbersRow&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;minimal&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;invisible&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;keyHints&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:true,&quot;tsType&quot;:&quot;boolean&quot;},&quot;acOff&quot;:{&quot;editor&quot;:&quot;boolean&quot;,&quot;default&quot;:false,&quot;tsType&quot;:&quot;boolean&quot;},&quot;specialKey&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;smiley&quot;,&quot;comma&quot;],&quot;default&quot;:&quot;smiley&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;pressed&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;gesture&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;&quot;,&quot;right&quot;,&quot;left&quot;,&quot;down&quot;,&quot;up&quot;,&quot;space&quot;],&quot;default&quot;:&quot;&quot;,&quot;tsType&quot;:&quot;string&quot;},&quot;candidates&quot;:{&quot;editor&quot;:null,&quot;tsType&quot;:&quot;object&quot;}}">
+const SIZES = { S: 50, M: 56, L: 62, XL: 68 };
+const LET = [
+  ['q','w','e','r','t','y','u','i','o','p'],
+  ['a','s','d','f','g','h','j','k','l'],
+  ['z','x','c','v','b','n','m']
+];
+const NUMHINT = ['1','2','3','4','5','6','7','8','9','0'];
+const SYM = [
+  ['1','2','3','4','5','6','7','8','9','0'],
+  ['-','/',':',';','(',')','$','&','@','"'],
+  ['.',',','?','!',"'"]
+];
+const EMO = [
+  ['\u{1F60A}','\u{1F602}','\u{1F60D}','\u{1F914}','\u{1F634}','\u{1F44F}','\u{1F64C}','\u{1F44D}'],
+  ['\u2728','\u{1F525}','\u{1F33F}','\u{1F319}','\u2615','\u{1F353}','\u{1F3A7}','\u{1F34B}'],
+  ['\u2764\uFE0F','\u{1F49C}','\u{1F389}','\u{1F4A1}','\u2B50','\u{1F338}','\u{1F340}','\u{1F4CC}']
+];
+const FALLBACK = {
+  name: 'Oat', kbBg: '#E8E3DA', key: '#F8F5EF', keyEdge: '#D8D1C4', keyShadow: '#D0C8B8',
+  keyText: '#3B3730', fnKey: '#DCD5C8', fnText: '#5C564B', hint: '#A69C8B',
+  accent: '#8E9C7F', onAccent: '#FFFFFF', chip: 'rgba(0,0,0,0.05)', chipText: '#3B3730',
+  chipActive: '#8E9C7F', onChipActive: '#FFFFFF'
+};
+
+class Component extends DCLogic {
+  renderVals() {
+    const T = this.props.theme || FALLBACK;
+    const h = SIZES[this.props.size || 'L'];
+    const gap = Math.round(h * 0.1);
+    const layer = this.props.layer || 'letters';
+    const shift = !!this.props.shift;
+    const inv = !!this.props.invisible;
+    const minimal = !!this.props.minimal;
+    const kf = 'Barlow Semi Condensed, Oswald, sans-serif';
+
+    const keyStyle = (kind, flex) => {
+      const s = {
+        flex: flex, height: h, minWidth: 0, display: 'flex', alignItems: 'center',
+        justifyContent: 'center', position: 'relative', boxSizing: 'border-box',
+        borderRadius: Math.round(h * 0.18)
+      };
+      if (inv) { s.background = 'transparent'; s.border = '1px dashed ' + T.keyEdge; return s; }
+      if (kind === 'accent') {
+        s.background = T.accent; s.border = '1px solid ' + T.accent;
+        s.boxShadow = '0 1.5px 0 ' + T.keyShadow; return s;
+      }
+      if (kind === 'fn' || kind === 'emoji') {
+        s.background = kind === 'emoji' ? 'transparent' : T.fnKey;
+        s.border = kind === 'emoji' ? 'none' : '1px solid ' + T.keyEdge;
+        if (kind === 'fn') s.boxShadow = '0 1.5px 0 ' + T.keyShadow;
+        return s;
+      }
+      if (kind === 'pressed') {
+        s.background = T.fnKey; s.border = '1px solid ' + T.accent;
+        s.transform = 'scale(0.95)'; s.boxShadow = 'none'; return s;
+      }
+      s.background = T.key; s.border = '1px solid ' + T.keyEdge;
+      s.boxShadow = '0 1.5px 0 ' + T.keyShadow;
+      return s;
+    };
+    const labelStyle = (kind, scale) => ({
+      fontFamily: kind === 'emoji' ? 'system-ui, sans-serif' : kf,
+      fontSize: Math.round(h * (scale || 0.4)),
+      fontWeight: kind === 'emoji' ? 400 : 500,
+      lineHeight: 1,
+      letterSpacing: kind === 'fn' ? '0.02em' : '0',
+      color: inv ? 'transparent' : (kind === 'accent' ? T.onAccent : (kind === 'fn' ? T.fnText : T.keyText))
+    });
+    const K = (label, kind, flex, opts) => {
+      const o = opts || {};
+      const k = {
+        label: label, hint: o.hint || null, pop: !!o.pop,
+        style: keyStyle(o.pressed ? 'pressed' : kind, flex),
+        labelStyle: labelStyle(kind, o.scale)
+      };
+      return k;
+    };
+    const rowKeys = (keys) => ({ isKeys: true, isLine: false, keys: keys, style: { display: 'flex', gap: gap } });
+    const spacer = (flex) => ({ label: '', hint: null, pop: false, style: { flex: flex, minWidth: 0 }, labelStyle: {} });
+
+    const pressed = this.props.pressed || null;
+    const hintsOn = this.props.keyHints !== false;
+    const rows = [];
+
+    if (this.props.numbersRow && layer !== 'emoji') {
+      rows.push(rowKeys(NUMHINT.map(n => K(n, 'fn', 1, { scale: 0.32 }))));
+    }
+
+    if (layer === 'emoji') {
+      EMO.forEach(r => rows.push(rowKeys(r.map(e => K(e, 'emoji', 1, { scale: 0.52 })))));
+    } else if (layer === 'symbols') {
+      rows.push(rowKeys(SYM[0].map(c => K(c, 'key', 1))));
+      rows.push(rowKeys(SYM[1].map(c => K(c, 'key', 1))));
+      rows.push(rowKeys([K('#+=', 'fn', 1.5, { scale: 0.28 })]
+        .concat([spacer(0.2)])
+        .concat(SYM[2].map(c => K(c, 'key', 1)))
+        .concat([spacer(0.2), K('\u232B', 'fn', 1.5, { scale: 0.34 })])));
+    } else {
+      rows.push(rowKeys(LET[0].map((c, i) => K(shift ? c.toUpperCase() : c, 'key', 1,
+        { hint: hintsOn ? NUMHINT[i] : null, pop: pressed === c, pressed: pressed === c }))));
+      rows.push(rowKeys([spacer(0.5)]
+        .concat(LET[1].map(c => K(shift ? c.toUpperCase() : c, 'key', 1, { pop: pressed === c, pressed: pressed === c })))
+        .concat([spacer(0.5)])));
+      if (this.props.middleRow !== false) {
+        rows.push({ isLine: true, isKeys: false });
+      }
+      rows.push(rowKeys([K(shift ? '\u21EA' : '\u21E7', shift ? 'accent' : 'fn', 1.5, { scale: 0.36 })]
+        .concat([spacer(0.15)])
+        .concat(LET[2].map(c => K(shift ? c.toUpperCase() : c, 'key', 1, { pop: pressed === c, pressed: pressed === c })))
+        .concat([spacer(0.15), K('\u232B', 'fn', 1.5, { scale: 0.34 })])));
+    }
+
+    if (!minimal) {
+      const special = this.props.specialKey === 'comma' ? ',' : '\u263A';
+      rows.push(rowKeys([
+        K(layer === 'letters' ? '123' : 'ABC', 'fn', 1.3, { scale: 0.28 }),
+        K(special, 'fn', 1, { scale: 0.4 }),
+        K(this.props.spaceLabel === undefined ? 'atom' : this.props.spaceLabel, 'key', 4.2, { scale: 0.26 }),
+        K(this.props.acOff ? 'AC\u2715' : 'AC', 'fn', 1, { scale: 0.26 }),
+        K('.', 'key', 1, { scale: 0.4 }),
+        K('\u2713', 'accent', 1.5, { scale: 0.4 })
+      ]));
+    }
+
+    const chipsIn = this.props.candidates || [
+      { t: 'my', active: true, sub: true }, { t: 'there' }, { t: '\u{1F44B}', emoji: true }
+    ];
+    const chips = chipsIn.map(c => ({
+      t: c.t, sub: !!c.sub,
+      style: {
+        padding: '5px 14px', borderRadius: 16, position: 'relative',
+        background: c.active ? T.chipActive : T.chip,
+        display: 'flex', alignItems: 'center', justifyContent: 'center'
+      },
+      textStyle: {
+        fontFamily: c.emoji ? 'system-ui, sans-serif' : 'DM Sans, sans-serif',
+        fontSize: 15, fontWeight: c.active ? 500 : 400,
+        color: c.active ? T.onChipActive : T.chipText
+      }
+    }));
+
+    const g = this.props.gesture || null;
+    const gLabels = {
+      right: 'swipe right \u2192 space / accept',
+      left: '\u2190 swipe left \u2022 delete word',
+      down: 'swipe down \u2193 next candidate',
+      up: 'swipe up \u2191 revert correction',
+      space: 'hold space \u2022 cursor control'
+    };
+    const trails = {
+      right: { left: '22%', top: '46%', width: '46%', height: 3, background: 'linear-gradient(90deg,' + T.accent + '00,' + T.accent + ')' },
+      left: { left: '26%', top: '46%', width: '46%', height: 3, background: 'linear-gradient(270deg,' + T.accent + '00,' + T.accent + ')' },
+      down: { left: '46%', top: '24%', width: 3, height: '44%', background: 'linear-gradient(180deg,' + T.accent + '00,' + T.accent + ')' },
+      up: { left: '46%', top: '26%', width: 3, height: '44%', background: 'linear-gradient(0deg,' + T.accent + '00,' + T.accent + ')' },
+      space: { left: '28%', bottom: '9%', width: '44%', height: h, background: T.accent + '26', borderRadius: 10 }
+    };
+
+    return {
+      wrap: {
+        background: T.kbBg, padding: '8px ' + gap + 'px ' + (gap + 4) + 'px',
+        display: 'flex', flexDirection: 'column', gap: gap, position: 'relative',
+        boxSizing: 'border-box', width: '100%'
+      },
+      showStrip: this.props.showStrip !== false,
+      stripStyle: {
+        height: 48, display: 'flex', alignItems: 'center', gap: 8,
+        marginBottom: 2, flexShrink: 0
+      },
+      dotsBtn: {
+        width: 40, height: 40, flexShrink: 0, borderRadius: 12, display: 'flex',
+        alignItems: 'center', justifyContent: 'center', fontSize: 20,
+        color: T.fnText, background: T.chip, fontFamily: 'DM Sans, sans-serif'
+      },
+      micBtn: {
+        width: 40, height: 40, flexShrink: 0, borderRadius: 12, display: 'flex',
+        alignItems: 'center', justifyContent: 'center', fontSize: 13,
+        color: T.hint, fontFamily: 'DM Sans, sans-serif'
+      },
+      chipRow: { flex: 1, minWidth: 0, display: 'flex', alignItems: 'center', gap: 8, overflow: 'hidden' },
+      chips: chips,
+      subDots: {
+        position: 'absolute', left: '50%', transform: 'translateX(-50%)', bottom: -9,
+        fontSize: 11, letterSpacing: '2px', lineHeight: 1, color: T.hint,
+        fontFamily: 'DM Sans, sans-serif'
+      },
+      rows: rows,
+      hintStyle: {
+        position: 'absolute', top: Math.round(h * 0.1), right: Math.round(h * 0.11),
+        fontSize: Math.max(9, Math.round(h * 0.17)), lineHeight: 1, opacity: inv ? 0 : 0.55,
+        color: T.hint, fontFamily: kf
+      },
+      popStyle: {
+        position: 'absolute', bottom: h + 6, left: '50%', transform: 'translateX(-50%)',
+        width: 46, height: 54, borderRadius: 12, background: T.key,
+        border: '1px solid ' + T.keyEdge, boxShadow: '0 6px 18px rgba(0,0,0,0.16)',
+        display: 'flex', alignItems: 'center', justifyContent: 'center',
+        fontFamily: kf, fontSize: 30, color: T.keyText, zIndex: 5
+      },
+      lineStyle: {
+        height: 2.5, borderRadius: 2, margin: '2px ' + Math.round(h * 0.5) + 'px', opacity: 0.75,
+        background: 'linear-gradient(90deg, transparent, ' + T.accent + ', transparent)',
+        animation: 'atomShimmer 2.6s ease-in-out infinite'
+      },
+      hasGesture: !!g,
+      gestureLabel: g ? gLabels[g] : '',
+      trailStyle: Object.assign({ position: 'absolute', borderRadius: 3, zIndex: 4 }, g ? trails[g] : {}),
+      pillStyle: {
+        position: 'absolute', left: '50%', top: g === 'space' ? 12 : '50%',
+        transform: g === 'space' ? 'translateX(-50%)' : 'translate(-50%,-50%)',
+        padding: '6px 12px', borderRadius: 999, background: T.accent, color: T.onAccent,
+        fontFamily: 'DM Sans, sans-serif', fontSize: 12, fontWeight: 500,
+        whiteSpace: 'nowrap', zIndex: 6, boxShadow: '0 4px 14px rgba(0,0,0,0.18)'
+      }
+    };
+  }
+}
+</script>
+</body>
+</html>

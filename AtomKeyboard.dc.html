@@ -1,0 +1,504 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet><meta name="design_doc_mode" content="canvas"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin><link href="https://fonts.googleapis.com/css2?family=Barlow+Semi+Condensed:wght@400;500;600&family=DM+Sans:wght@400;500;700&display=swap" rel="stylesheet"><style>body{margin:0;background:#E6E3DB;font-family:'DM Sans',system-ui,sans-serif;-webkit-font-smoothing:antialiased}a{color:#8A6A4F;text-decoration:none}a:hover{color:#5E4736}</style></helmet>
+<section style="padding:44px 48px 34px;max-width:900px">
+  <div style="display:flex;align-items:baseline;gap:12px;margin-bottom:22px">
+    <div style="font:700 26px/1 'DM Sans',sans-serif;letter-spacing:-0.02em;color:#26241F">AtomKeyboard</div>
+    <div style="font:400 12px/1 ui-monospace,Menlo,monospace;color:#8A8377">v1 · pastel keyboard mockup · static screens</div>
+  </div>
+  <p style="font:400 14.5px/1.65 'DM Sans',sans-serif;color:#413E37;margin:0 0 14px;max-width:66ch;text-wrap:pretty">A full front-end mockup of the gesture keyboard described in the spec, drawn in a muted, dusty pastel palette with raised keycaps. Everything here is a static screen — no live typing engine — so each state the spec calls out is shown as its own frame rather than hidden behind an interaction.</p>
+  <p style="font:400 14.5px/1.65 'DM Sans',sans-serif;color:#413E37;margin:0 0 14px;max-width:66ch;text-wrap:pretty">Assumptions I made, flag anything that's wrong: the brand mark on the spacebar reads <strong style="font-weight:500">atom</strong>; the vibrant extension tile colors from the spec are re-tinted to deeper pastels so they read as accents rather than fight the keyboard; icons are simple glyphs standing in for a real icon set; and the two Claude themes reuse Claude's own paper/ink/coral values rather than a pastel derivative.</p>
+  <p style="font:400 14.5px/1.65 'DM Sans',sans-serif;color:#413E37;margin:0;max-width:66ch;text-wrap:pretty">Sections below: <a href="#s-tokens">tokens</a>, <a href="#s-device">device screens</a>, <a href="#s-layers">layers &amp; states</a>, <a href="#s-gestures">gestures</a>, <a href="#s-height">key height</a>, <a href="#s-deck">extension deck</a>, <a href="#s-settings">settings</a>, <a href="#s-themes">themes</a>.</p>
+</section>
+
+<section id="s-tokens" style="padding:34px 48px;border-top:1px solid rgba(0,0,0,0.09)">
+  <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:20px">
+    <span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:#fff;background:#26241F;padding:4px 7px;border-radius:4px">00</span>
+    <span style="font:700 13px/1 'DM Sans',sans-serif;letter-spacing:0.1em;text-transform:uppercase;color:#26241F">Tokens</span>
+    <span style="font:400 12px/1 'DM Sans',sans-serif;color:#8A8377">five themes · two type families</span>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:16px;margin-bottom:26px">
+    <sc-for list="{{ themeList }}" as="t" hint-placeholder-count="5">
+      <div style="width:194px;background:#F3F1EB;border:1px solid rgba(0,0,0,0.07);border-radius:10px;overflow:hidden">
+        <div style="display:flex;height:56px">
+          <sc-for list="{{ t.swatches }}" as="s" hint-placeholder-count="6">
+            <div style="{{ s.style }}"></div>
+          </sc-for>
+        </div>
+        <div style="padding:11px 13px 13px">
+          <div style="font:500 14px/1.2 'DM Sans',sans-serif;color:#26241F">{{ t.name }}</div>
+          <div style="font:400 11px/1.5 ui-monospace,Menlo,monospace;color:#8A8377;margin-top:5px">{{ t.codes }}</div>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:34px;align-items:flex-end">
+    <div>
+      <div style="font:500 42px/1 'Barlow Semi Condensed',sans-serif;color:#26241F">Qq Ww Ee 1234</div>
+      <div style="font:400 11.5px/1 ui-monospace,Menlo,monospace;color:#8A8377;margin-top:9px">Barlow Semi Condensed 500 — keycaps, hints</div>
+    </div>
+    <div>
+      <div style="font:700 26px/1 'DM Sans',sans-serif;color:#26241F">Keyboard height</div>
+      <div style="font:400 11.5px/1 ui-monospace,Menlo,monospace;color:#8A8377;margin-top:9px">DM Sans 400/500/700 — UI, settings, candidates</div>
+    </div>
+  </div>
+</section>
+
+<section id="s-device" style="padding:34px 48px;border-top:1px solid rgba(0,0,0,0.09)">
+  <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:22px">
+    <span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:#fff;background:#26241F;padding:4px 7px;border-radius:4px">01</span>
+    <span style="font:700 13px/1 'DM Sans',sans-serif;letter-spacing:0.1em;text-transform:uppercase;color:#26241F">In context</span>
+    <span style="font:400 12px/1 'DM Sans',sans-serif;color:#8A8377">Android · 412 × 892</span>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:40px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:11px">
+      <div style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px/1 ui-monospace,Menlo,monospace;background:rgba(0,0,0,0.08);color:#26241F;padding:3px 6px;border-radius:4px">D1</span><span style="font:400 12px/1 'DM Sans',sans-serif;color:#6B6559">Sage Mist · composing a note</span></div>
+      <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" width="{{ 412 }}" height="{{ 892 }}" hint-size="412px,892px">
+        <div style="display:flex;flex-direction:column;height:100%;background:#F1F3EE">
+          <div style="padding:18px 20px 10px;display:flex;align-items:center;gap:14px">
+            <span style="font:400 20px/1 'DM Sans',sans-serif;color:#5A6357">&#8249;</span>
+            <span style="font:500 16px/1 'DM Sans',sans-serif;color:#2B322B">Notes</span>
+          </div>
+          <div style="flex:1;padding:6px 20px">
+            <div style="font:500 19px/1.3 'DM Sans',sans-serif;color:#2B322B;margin-bottom:9px">Saturday</div>
+            <div style="font:400 15px/1.6 'DM Sans',sans-serif;color:#4A5147">walk to the market before it gets hot, then<span style="display:inline-block;width:1.5px;height:16px;background:#7E9A80;vertical-align:-3px;margin-left:2px"></span></div>
+          </div>
+          <dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ sage }}" pressed="n" size="{{ kbSize }}" hint-size="412px,300px"></dc-import>
+        </div>
+      </x-import>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:11px">
+      <div style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px/1 ui-monospace,Menlo,monospace;background:rgba(0,0,0,0.08);color:#26241F;padding:3px 6px;border-radius:4px">D2</span><span style="font:400 12px/1 'DM Sans',sans-serif;color:#6B6559">Claude Light · shift held</span></div>
+      <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" width="{{ 412 }}" height="{{ 892 }}" hint-size="412px,892px">
+        <div style="display:flex;flex-direction:column;height:100%;background:#FAF9F5">
+          <div style="padding:18px 20px 10px;display:flex;align-items:center;gap:14px">
+            <span style="font:400 20px/1 'DM Sans',sans-serif;color:#6B675E">&#8249;</span>
+            <span style="font:500 16px/1 'DM Sans',sans-serif;color:#191919">Maya</span>
+          </div>
+          <div style="flex:1;padding:6px 20px;display:flex;flex-direction:column;gap:9px;justify-content:flex-end">
+            <div style="align-self:flex-start;max-width:74%;background:#F0EEE6;border-radius:16px 16px 16px 5px;padding:11px 14px;font:400 15px/1.45 'DM Sans',sans-serif;color:#191919">did you get the tickets?</div>
+            <div style="align-self:flex-end;max-width:74%;background:#D97757;border-radius:16px 16px 5px 16px;padding:11px 14px;font:400 15px/1.45 'DM Sans',sans-serif;color:#fff">Yes<span style="display:inline-block;width:1.5px;height:16px;background:#fff;vertical-align:-3px;margin-left:2px;opacity:.7"></span></div>
+          </div>
+          <dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ claudeLight }}" shift="{{ true }}" candidates="{{ candsShift }}" size="{{ kbSize }}" hint-size="412px,300px"></dc-import>
+        </div>
+      </x-import>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:11px">
+      <div style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px/1 ui-monospace,Menlo,monospace;background:rgba(0,0,0,0.08);color:#26241F;padding:3px 6px;border-radius:4px">D3</span><span style="font:400 12px/1 'DM Sans',sans-serif;color:#6B6559">Claude Dark · emoji layer</span></div>
+      <x-import component-from-global-scope="AndroidDevice" from="./android-frame.jsx" width="{{ 412 }}" height="{{ 892 }}" dark="{{ true }}" hint-size="412px,892px">
+        <div style="display:flex;flex-direction:column;height:100%;background:#262624">
+          <div style="padding:18px 20px 10px;display:flex;align-items:center;gap:14px">
+            <span style="font:400 20px/1 'DM Sans',sans-serif;color:#B4B0A6">&#8249;</span>
+            <span style="font:500 16px/1 'DM Sans',sans-serif;color:#F5F4EF">Maya</span>
+          </div>
+          <div style="flex:1;padding:6px 20px;display:flex;flex-direction:column;gap:9px;justify-content:flex-end">
+            <div style="align-self:flex-start;max-width:74%;background:#30302E;border-radius:16px 16px 16px 5px;padding:11px 14px;font:400 15px/1.45 'DM Sans',sans-serif;color:#F5F4EF">did you get the tickets?</div>
+            <div style="align-self:flex-end;max-width:74%;background:#D97757;border-radius:16px 16px 5px 16px;padding:11px 14px;font:400 15px/1.45 'DM Sans',sans-serif;color:#231F1D">Yes, front row</div>
+          </div>
+          <dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ claudeDark }}" layer="emoji" candidates="{{ candsEmoji }}" size="{{ kbSize }}" hint-size="412px,300px"></dc-import>
+        </div>
+      </x-import>
+    </div>
+  </div>
+</section>
+
+<section id="s-layers" style="padding:34px 48px;border-top:1px solid rgba(0,0,0,0.09)">
+  <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:22px">
+    <span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:#fff;background:#26241F;padding:4px 7px;border-radius:4px">02</span>
+    <span style="font:700 13px/1 'DM Sans',sans-serif;letter-spacing:0.1em;text-transform:uppercase;color:#26241F">Layers &amp; states</span>
+    <span style="font:400 12px/1 'DM Sans',sans-serif;color:#8A8377">Clay theme · L height</span>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:26px">
+    <div style="display:flex;flex-direction:column;gap:9px;width:412px">
+      <div style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px/1 ui-monospace,Menlo,monospace;background:rgba(0,0,0,0.08);color:#26241F;padding:3px 6px;border-radius:4px">L1</span><span style="font:400 12px/1 'DM Sans',sans-serif;color:#6B6559">Letters · key press bubble on <strong style="font-weight:500">h</strong></span></div>
+      <div style="border-radius:10px;overflow:hidden;border:1px solid rgba(0,0,0,0.07)"><dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ clay }}" size="{{ kbSize }}" pressed="h" hint-size="412px,300px"></dc-import></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:9px;width:412px">
+      <div style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px/1 ui-monospace,Menlo,monospace;background:rgba(0,0,0,0.08);color:#26241F;padding:3px 6px;border-radius:4px">L2</span><span style="font:400 12px/1 'DM Sans',sans-serif;color:#6B6559">Shift locked · case sensitive layout on</span></div>
+      <div style="border-radius:10px;overflow:hidden;border:1px solid rgba(0,0,0,0.07)"><dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ clay }}" size="{{ kbSize }}" shift="{{ true }}" candidates="{{ candsShift }}" hint-size="412px,300px"></dc-import></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:9px;width:412px">
+      <div style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px/1 ui-monospace,Menlo,monospace;background:rgba(0,0,0,0.08);color:#26241F;padding:3px 6px;border-radius:4px">L3</span><span style="font:400 12px/1 'DM Sans',sans-serif;color:#6B6559">123 · numbers &amp; symbols layer</span></div>
+      <div style="border-radius:10px;overflow:hidden;border:1px solid rgba(0,0,0,0.07)"><dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ clay }}" size="{{ kbSize }}" layer="symbols" candidates="{{ candsSym }}" hint-size="412px,300px"></dc-import></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:9px;width:412px">
+      <div style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px/1 ui-monospace,Menlo,monospace;background:rgba(0,0,0,0.08);color:#26241F;padding:3px 6px;border-radius:4px">L4</span><span style="font:400 12px/1 'DM Sans',sans-serif;color:#6B6559">Emoji layer</span></div>
+      <div style="border-radius:10px;overflow:hidden;border:1px solid rgba(0,0,0,0.07)"><dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ clay }}" size="{{ kbSize }}" layer="emoji" candidates="{{ candsEmoji }}" hint-size="412px,300px"></dc-import></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:9px;width:412px">
+      <div style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px/1 ui-monospace,Menlo,monospace;background:rgba(0,0,0,0.08);color:#26241F;padding:3px 6px;border-radius:4px">L5</span><span style="font:400 12px/1 'DM Sans',sans-serif;color:#6B6559">Numbers row extension · permanent top row</span></div>
+      <div style="border-radius:10px;overflow:hidden;border:1px solid rgba(0,0,0,0.07)"><dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ clay }}" size="{{ kbSize }}" numbersRow="{{ true }}" keyHints="{{ false }}" hint-size="412px,340px"></dc-import></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:9px;width:412px">
+      <div style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px/1 ui-monospace,Menlo,monospace;background:rgba(0,0,0,0.08);color:#26241F;padding:3px 6px;border-radius:4px">L6</span><span style="font:400 12px/1 'DM Sans',sans-serif;color:#6B6559">Minimal mode · bottom row hidden, no middle rule</span></div>
+      <div style="border-radius:10px;overflow:hidden;border:1px solid rgba(0,0,0,0.07)"><dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ clay }}" size="{{ kbSize }}" minimal="{{ true }}" middleRow="{{ false }}" hint-size="412px,260px"></dc-import></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:9px;width:412px">
+      <div style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px/1 ui-monospace,Menlo,monospace;background:rgba(0,0,0,0.08);color:#26241F;padding:3px 6px;border-radius:4px">L7</span><span style="font:400 12px/1 'DM Sans',sans-serif;color:#6B6559">Invisible keyboard · muscle-memory typing</span></div>
+      <div style="border-radius:10px;overflow:hidden;border:1px solid rgba(0,0,0,0.07)"><dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ clay }}" size="{{ kbSize }}" invisible="{{ true }}" hint-size="412px,300px"></dc-import></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:9px;width:412px">
+      <div style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px/1 ui-monospace,Menlo,monospace;background:rgba(0,0,0,0.08);color:#26241F;padding:3px 6px;border-radius:4px">L8</span><span style="font:400 12px/1 'DM Sans',sans-serif;color:#6B6559">Auto-correct off · comma as special key</span></div>
+      <div style="border-radius:10px;overflow:hidden;border:1px solid rgba(0,0,0,0.07)"><dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ clay }}" size="{{ kbSize }}" acOff="{{ true }}" specialKey="comma" candidates="{{ candsRaw }}" hint-size="412px,300px"></dc-import></div>
+    </div>
+  </div>
+</section>
+
+<section id="s-gestures" style="padding:34px 48px;border-top:1px solid rgba(0,0,0,0.09)">
+  <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:22px">
+    <span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:#fff;background:#26241F;padding:4px 7px;border-radius:4px">03</span>
+    <span style="font:700 13px/1 'DM Sans',sans-serif;letter-spacing:0.1em;text-transform:uppercase;color:#26241F">Gestures</span>
+    <span style="font:400 12px/1 'DM Sans',sans-serif;color:#8A8377">trail + pill shown at M swipe length (40dp)</span>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:26px">
+    <div style="display:flex;flex-direction:column;gap:9px;width:412px">
+      <div style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px/1 ui-monospace,Menlo,monospace;background:rgba(0,0,0,0.08);color:#26241F;padding:3px 6px;border-radius:4px">G1</span><span style="font:400 12px/1 'DM Sans',sans-serif;color:#6B6559">Swipe right — space, or accept the highlighted candidate</span></div>
+      <div style="border-radius:10px;overflow:hidden;border:1px solid rgba(0,0,0,0.07)"><dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ mauve }}" size="{{ kbSize }}" gesture="right" hint-size="412px,300px"></dc-import></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:9px;width:412px">
+      <div style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px/1 ui-monospace,Menlo,monospace;background:rgba(0,0,0,0.08);color:#26241F;padding:3px 6px;border-radius:4px">G2</span><span style="font:400 12px/1 'DM Sans',sans-serif;color:#6B6559">Swipe left — delete the previous whole word</span></div>
+      <div style="border-radius:10px;overflow:hidden;border:1px solid rgba(0,0,0,0.07)"><dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ mauve }}" size="{{ kbSize }}" gesture="left" hint-size="412px,300px"></dc-import></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:9px;width:412px">
+      <div style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px/1 ui-monospace,Menlo,monospace;background:rgba(0,0,0,0.08);color:#26241F;padding:3px 6px;border-radius:4px">G3</span><span style="font:400 12px/1 'DM Sans',sans-serif;color:#6B6559">Swipe down — cycle to the next candidate (dots under the chip)</span></div>
+      <div style="border-radius:10px;overflow:hidden;border:1px solid rgba(0,0,0,0.07)"><dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ mauve }}" size="{{ kbSize }}" gesture="down" candidates="{{ candsAlt }}" hint-size="412px,300px"></dc-import></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:9px;width:412px">
+      <div style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px/1 ui-monospace,Menlo,monospace;background:rgba(0,0,0,0.08);color:#26241F;padding:3px 6px;border-radius:4px">G4</span><span style="font:400 12px/1 'DM Sans',sans-serif;color:#6B6559">Swipe up — revert the correction, or learn the raw word</span></div>
+      <div style="border-radius:10px;overflow:hidden;border:1px solid rgba(0,0,0,0.07)"><dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ mauve }}" size="{{ kbSize }}" gesture="up" candidates="{{ candsRaw }}" hint-size="412px,300px"></dc-import></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:9px;width:412px">
+      <div style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px/1 ui-monospace,Menlo,monospace;background:rgba(0,0,0,0.08);color:#26241F;padding:3px 6px;border-radius:4px">G5</span><span style="font:400 12px/1 'DM Sans',sans-serif;color:#6B6559">Hold spacebar — fine cursor control &amp; select all</span></div>
+      <div style="border-radius:10px;overflow:hidden;border:1px solid rgba(0,0,0,0.07)"><dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ mauve }}" size="{{ kbSize }}" gesture="space" hint-size="412px,300px"></dc-import></div>
+    </div>
+  </div>
+</section>
+
+<section id="s-height" style="padding:34px 48px;border-top:1px solid rgba(0,0,0,0.09)">
+  <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:22px">
+    <span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:#fff;background:#26241F;padding:4px 7px;border-radius:4px">04</span>
+    <span style="font:700 13px/1 'DM Sans',sans-serif;letter-spacing:0.1em;text-transform:uppercase;color:#26241F">Key height</span>
+    <span style="font:400 12px/1 'DM Sans',sans-serif;color:#8A8377">S 50 · M 56 · L 62 · XL 68 dp — gap, radius and label size scale with it</span>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:22px">
+    <div style="display:flex;flex-direction:column;gap:9px;width:300px">
+      <div style="font:400 11px/1 ui-monospace,Menlo,monospace;color:#6B6559">S · 50dp</div>
+      <div style="border-radius:8px;overflow:hidden;border:1px solid rgba(0,0,0,0.07)"><dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ sage }}" size="S" showStrip="{{ false }}" minimal="{{ true }}" hint-size="300px,190px"></dc-import></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:9px;width:300px">
+      <div style="font:400 11px/1 ui-monospace,Menlo,monospace;color:#6B6559">M · 56dp</div>
+      <div style="border-radius:8px;overflow:hidden;border:1px solid rgba(0,0,0,0.07)"><dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ sage }}" size="M" showStrip="{{ false }}" minimal="{{ true }}" hint-size="300px,205px"></dc-import></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:9px;width:300px">
+      <div style="font:400 11px/1 ui-monospace,Menlo,monospace;color:#6B6559">L · 62dp · default</div>
+      <div style="border-radius:8px;overflow:hidden;border:1px solid rgba(0,0,0,0.07)"><dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ sage }}" size="L" showStrip="{{ false }}" minimal="{{ true }}" hint-size="300px,220px"></dc-import></div>
+    </div>
+    <div style="display:flex;flex-direction:column;gap:9px;width:300px">
+      <div style="font:400 11px/1 ui-monospace,Menlo,monospace;color:#6B6559">XL · 68dp</div>
+      <div style="border-radius:8px;overflow:hidden;border:1px solid rgba(0,0,0,0.07)"><dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ sage }}" size="XL" showStrip="{{ false }}" minimal="{{ true }}" hint-size="300px,235px"></dc-import></div>
+    </div>
+  </div>
+</section>
+
+<section id="s-deck" style="padding:34px 48px;border-top:1px solid rgba(0,0,0,0.09)">
+  <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:22px">
+    <span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:#fff;background:#26241F;padding:4px 7px;border-radius:4px">05</span>
+    <span style="font:700 13px/1 'DM Sans',sans-serif;letter-spacing:0.1em;text-transform:uppercase;color:#26241F">Extension deck</span>
+    <span style="font:400 12px/1 'DM Sans',sans-serif;color:#8A8377">opened from the ⋯ key · shelf of active slots above the grid</span>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:34px;align-items:flex-start">
+    <div style="display:flex;flex-direction:column;gap:11px;width:412px">
+      <div style="display:flex;align-items:baseline;gap:8px"><span style="font:400 10.5px/1 ui-monospace,Menlo,monospace;background:rgba(0,0,0,0.08);color:#26241F;padding:3px 6px;border-radius:4px">E1</span><span style="font:400 12px/1 'DM Sans',sans-serif;color:#6B6559">Deck open over the keyboard</span></div>
+      <div style="width:412px;background:#E8E3DA;border-radius:10px;border:1px solid rgba(0,0,0,0.07);overflow:hidden">
+        <div style="display:flex;align-items:center;gap:8px;padding:12px 12px 10px">
+          <div style="width:36px;height:36px;border-radius:11px;background:rgba(0,0,0,0.06);display:flex;align-items:center;justify-content:center;font-size:18px;color:#5C564B">⋯</div>
+          <div style="flex:1;display:flex;gap:7px;overflow:hidden">
+            <sc-for list="{{ shelf }}" as="s" hint-placeholder-count="4">
+              <div style="{{ s.style }}"><span style="font-size:15px">{{ s.icon }}</span></div>
+            </sc-for>
+          </div>
+          <div style="font:400 11.5px/1 'DM Sans',sans-serif;color:#8A8377">3 / 4 slots</div>
+        </div>
+        <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:8px;padding:2px 12px 14px">
+          <sc-for list="{{ tiles }}" as="t" hint-placeholder-count="12">
+            <div style="{{ t.style }}">
+              <span style="font-size:19px;line-height:1">{{ t.icon }}</span>
+              <span style="{{ t.labelStyle }}">{{ t.name }}</span>
+            </div>
+          </sc-for>
+        </div>
+        <div style="border-top:1px solid rgba(0,0,0,0.06)"><dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ oat }}" showStrip="{{ false }}" size="M" hint-size="412px,250px"></dc-import></div>
+      </div>
+    </div>
+    <div style="width:340px">
+      <div style="font:500 14px/1.4 'DM Sans',sans-serif;color:#26241F;margin-bottom:10px">Tile spec</div>
+      <p style="font:400 13.5px/1.65 'DM Sans',sans-serif;color:#4A473F;margin:0 0 12px;text-wrap:pretty">76 × 76 rounded square, 12dp radius, solid pastel fill, one glyph centred over an 11sp label in white or deep ink depending on fill lightness.</p>
+      <p style="font:400 13.5px/1.65 'DM Sans',sans-serif;color:#4A473F;margin:0;text-wrap:pretty">The shelf holds the extensions currently mounted into the candidate strip; dragging a tile up into the shelf activates it. Four slots maximum so the strip never scrolls.</p>
+    </div>
+  </div>
+</section>
+
+<section id="s-settings" style="padding:34px 48px;border-top:1px solid rgba(0,0,0,0.09)">
+  <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:22px">
+    <span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:#fff;background:#26241F;padding:4px 7px;border-radius:4px">06</span>
+    <span style="font:700 13px/1 'DM Sans',sans-serif;letter-spacing:0.1em;text-transform:uppercase;color:#26241F">Settings</span>
+    <span style="font:400 12px/1 'DM Sans',sans-serif;color:#8A8377">six sections · 64dp rows on warm sand</span>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:22px;align-items:flex-start">
+    <sc-for list="{{ settings }}" as="sec" hint-placeholder-count="6">
+      <div style="width:356px;background:#E5E0DA;border:1px solid rgba(0,0,0,0.07);border-radius:12px;overflow:hidden">
+        <div style="display:flex;align-items:center;gap:12px;padding:16px 18px 14px">
+          <span style="font:400 18px/1 'DM Sans',sans-serif;color:#3A362E">&#8249;</span>
+          <span style="font:700 13px/1 'DM Sans',sans-serif;letter-spacing:0.12em;text-transform:uppercase;color:#26241F">{{ sec.name }}</span>
+        </div>
+        <sc-for list="{{ sec.rows }}" as="r" hint-placeholder-count="4">
+          <div style="display:flex;align-items:center;gap:14px;padding:12px 18px;border-top:1px solid rgba(0,0,0,0.055);min-height:64px;box-sizing:border-box">
+            <div style="width:26px;flex-shrink:0;text-align:center;font-size:16px;color:#3A362E;opacity:.75">{{ r.icon }}</div>
+            <div style="flex:1;min-width:0">
+              <div style="font:500 14px/1.3 'DM Sans',sans-serif;color:#26241F">{{ r.title }}</div>
+              <sc-if value="{{ r.sub }}"><div style="font:400 11.5px/1.4 'DM Sans',sans-serif;color:#847C6E;margin-top:3px;text-wrap:pretty">{{ r.sub }}</div></sc-if>
+            </div>
+            <sc-if value="{{ r.isToggle }}"><div style="{{ r.trackStyle }}"><div style="{{ r.knobStyle }}"></div></div></sc-if>
+            <sc-if value="{{ r.isSeg }}">
+              <div style="display:flex;gap:4px;flex-shrink:0">
+                <sc-for list="{{ r.opts }}" as="o" hint-placeholder-count="3">
+                  <div style="{{ o.style }}">{{ o.t }}</div>
+                </sc-for>
+              </div>
+            </sc-if>
+            <sc-if value="{{ r.value }}"><div style="font:500 13px/1 'DM Sans',sans-serif;color:#7D7568;flex-shrink:0">{{ r.value }}</div></sc-if>
+          </div>
+        </sc-for>
+      </div>
+    </sc-for>
+  </div>
+</section>
+
+<section id="s-themes" style="padding:34px 48px 60px;border-top:1px solid rgba(0,0,0,0.09)">
+  <div style="display:flex;align-items:baseline;gap:10px;margin-bottom:22px">
+    <span style="font:400 11px/1 ui-monospace,Menlo,monospace;color:#fff;background:#26241F;padding:4px 7px;border-radius:4px">07</span>
+    <span style="font:700 13px/1 'DM Sans',sans-serif;letter-spacing:0.1em;text-transform:uppercase;color:#26241F">Themes</span>
+    <span style="font:400 12px/1 'DM Sans',sans-serif;color:#8A8377">three dusty pastels plus Claude Light and Claude Dark</span>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:26px">
+    <sc-for list="{{ themeList }}" as="t" hint-placeholder-count="5">
+      <div style="display:flex;flex-direction:column;gap:9px;width:412px">
+        <div style="display:flex;align-items:baseline;gap:8px">
+          <span style="{{ t.badge }}">{{ t.id }}</span>
+          <span style="font:400 12px/1 'DM Sans',sans-serif;color:#6B6559">{{ t.name }}</span>
+        </div>
+        <div style="border-radius:10px;overflow:hidden;border:1px solid rgba(0,0,0,0.07)">
+          <dc-import name="AtomKeys" spaceLabel="{{ brand }}" theme="{{ t.theme }}" size="M" hint-size="412px,280px"></dc-import>
+        </div>
+      </div>
+    </sc-for>
+  </div>
+  <p style="font:400 13px/1.6 'DM Sans',sans-serif;color:#6B6559;margin:26px 0 0;max-width:70ch">Next: pick a theme to carry into a clickable prototype, swap the glyphs for a real icon set, or add the remaining layers (accented characters on long-press, language switcher on the spacebar).</p>
+</section>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props="{&quot;$preview&quot;:{&quot;width&quot;:1400,&quot;height&quot;:1000},&quot;kbSize&quot;:{&quot;editor&quot;:&quot;enum&quot;,&quot;options&quot;:[&quot;S&quot;,&quot;M&quot;,&quot;L&quot;,&quot;XL&quot;],&quot;default&quot;:&quot;L&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Keyboard&quot;},&quot;brand&quot;:{&quot;editor&quot;:&quot;text&quot;,&quot;default&quot;:&quot;atom&quot;,&quot;tsType&quot;:&quot;string&quot;,&quot;section&quot;:&quot;Keyboard&quot;}}">
+const SAGE = {
+  name: 'Sage Mist', kbBg: '#DDE3DA', key: '#F4F7F1', keyEdge: '#C9D2C4', keyShadow: '#C2CCBC',
+  keyText: '#333B33', fnKey: '#CCD5C7', fnText: '#4E574C', hint: '#8D9A88',
+  accent: '#7E9A80', onAccent: '#FFFFFF', chip: 'rgba(0,0,0,0.05)', chipText: '#333B33',
+  chipActive: '#7E9A80', onChipActive: '#FFFFFF'
+};
+const CLAY = {
+  name: 'Clay', kbBg: '#E9DCD3', key: '#F9F2EC', keyEdge: '#DCC9BC', keyShadow: '#D5C1B2',
+  keyText: '#45372F', fnKey: '#DDCCC0', fnText: '#6A5648', hint: '#A88F7E',
+  accent: '#BE8567', onAccent: '#FFFFFF', chip: 'rgba(0,0,0,0.05)', chipText: '#45372F',
+  chipActive: '#BE8567', onChipActive: '#FFFFFF'
+};
+const MAUVE = {
+  name: 'Mauve', kbBg: '#E2DAE4', key: '#F7F2F8', keyEdge: '#D0C5D3', keyShadow: '#C9BDCC',
+  keyText: '#3E3542', fnKey: '#D3C9D6', fnText: '#5D5164', hint: '#9A8CA0',
+  accent: '#9A7FA6', onAccent: '#FFFFFF', chip: 'rgba(0,0,0,0.05)', chipText: '#3E3542',
+  chipActive: '#9A7FA6', onChipActive: '#FFFFFF'
+};
+const OAT = {
+  name: 'Oat', kbBg: '#E8E3DA', key: '#F8F5EF', keyEdge: '#D8D1C4', keyShadow: '#D0C8B8',
+  keyText: '#3B3730', fnKey: '#DCD5C8', fnText: '#5C564B', hint: '#A0977F',
+  accent: '#8E9C7F', onAccent: '#FFFFFF', chip: 'rgba(0,0,0,0.05)', chipText: '#3B3730',
+  chipActive: '#8E9C7F', onChipActive: '#FFFFFF'
+};
+const CL = {
+  name: 'Claude Light', kbBg: '#EFECE3', key: '#FAF9F5', keyEdge: '#E0DBCD', keyShadow: '#DAD4C4',
+  keyText: '#191919', fnKey: '#E4E0D3', fnText: '#4A473F', hint: '#9C978A',
+  accent: '#D97757', onAccent: '#FFFFFF', chip: 'rgba(0,0,0,0.055)', chipText: '#191919',
+  chipActive: '#D97757', onChipActive: '#FFFFFF'
+};
+const CD = {
+  name: 'Claude Dark', kbBg: '#1F1E1D', key: '#30302E', keyEdge: '#3E3E3A', keyShadow: '#141413',
+  keyText: '#F5F4EF', fnKey: '#282826', fnText: '#C9C6BC', hint: '#7E7A70',
+  accent: '#D97757', onAccent: '#231F1D', chip: 'rgba(255,255,255,0.07)', chipText: '#F5F4EF',
+  chipActive: '#D97757', onChipActive: '#231F1D'
+};
+
+const TILES = [
+  { name: 'Highlights', icon: '\u25A3', bg: '#8FC6CF' },
+  { name: '123 Row', icon: '\u2261', bg: '#86C3B2' },
+  { name: 'Editor', icon: '\u270E', bg: '#A8C58C' },
+  { name: 'Launcher', icon: '\u27A4', bg: '#E0A177' },
+  { name: 'Hotkeys', icon: '\u2318', bg: '#E3C081' },
+  { name: 'Shortcuts', icon: 'OMW', bg: '#9FC0D6' },
+  { name: 'Rainbow', icon: '\u2248', bg: '#9A93C4' },
+  { name: 'Invisible', icon: '\u25CC', bg: '#A8A69E' },
+  { name: 'Heart Pops', icon: '\u2665', bg: '#DDA2B4' },
+  { name: 'Color Pops', icon: '\u25CF', bg: '#DFA0A0' },
+  { name: 'Clipboard', icon: '\u2398', bg: '#C7BFA8' },
+  { name: 'Add', icon: '\uFF0B', bg: 'rgba(0,0,0,0.06)' }
+];
+
+const SETTINGS = [
+  { name: 'Languages', rows: [
+    { icon: '\u2691', title: 'English (US)', sub: 'QWERTY \u00b7 primary', value: 'Active' },
+    { icon: '\u2691', title: 'Fran\u00e7ais', sub: 'AZERTY \u00b7 downloaded', value: 'On' },
+    { icon: '\u2691', title: 'Deutsch', sub: 'QWERTZ', value: '\u2193 Get' },
+    { icon: '\u2691', title: 'Dvorak', sub: 'English (US) layout variant', value: '\u2193 Get' },
+    { icon: '\u21C4', title: 'Swipe spacebar to switch', sub: 'Horizontal swipe cycles active languages', toggle: true }
+  ]},
+  { name: 'Look', rows: [
+    { icon: '\u2195', title: 'Keyboard height', seg: ['S','M','L','XL'], active: 'L' },
+    { icon: '\u25AD', title: 'Minimal mode', sub: 'Hides the spacebar row entirely', toggle: false },
+    { icon: '\u2337', title: 'Size of keyboard paddings', sub: 'Extra bottom padding for gesture nav bars', toggle: true },
+    { icon: 'Aa', title: 'Keyboard font', seg: ['OS','Atom'], active: 'Atom' },
+    { icon: '\u2015', title: 'Display middle row', sub: 'Rule and shimmer under the home row', toggle: true },
+    { icon: '\u263A', title: 'Special key', seg: ['\u263A',','], active: '\u263A' },
+    { icon: '\u25D1', title: 'Theme', sub: 'Sage Mist, Clay, Mauve, Claude Light, Claude Dark', value: 'Sage' }
+  ]},
+  { name: 'Gestures', rows: [
+    { icon: '\u2194', title: 'Swipe length', sub: 'Distance before a swipe fires', seg: ['S','M','L'], active: 'M' },
+    { icon: '\u23F1', title: 'Longpress delay', seg: ['S','M','L'], active: 'M' },
+    { icon: '\u2423', title: 'Swipe right to add a space', toggle: true },
+    { icon: '\u232B', title: 'Swipe left deletes a word', toggle: true },
+    { icon: '\u2195', title: 'Vertical swipe candidates', sub: 'Down cycles forward, up reverts', toggle: true }
+  ]},
+  { name: 'Typing', rows: [
+    { icon: '1\u00B2', title: 'Longpress for numbers & symbols', sub: 'Shows the small hint labels on keycaps', toggle: true },
+    { icon: '\u2026', title: 'Double-space period', toggle: true },
+    { icon: '\u2423', title: 'Autospace after punctuation', sub: 'After , . ! ?', toggle: true },
+    { icon: '\u21E7', title: 'Case sensitive layout', sub: 'Keycaps follow the shift state', toggle: true }
+  ]},
+  { name: 'Dictionary', rows: [
+    { icon: '\u2713', title: 'Auto-correction', sub: 'Tap-region analysis on raw touch points', toggle: true },
+    { icon: '.?', title: 'Auto-correction after punctuation', toggle: true },
+    { icon: '\u21E7', title: 'Auto-capitalization', toggle: true },
+    { icon: '\u2295', title: 'Auto-learn words', sub: '1,284 words in your dictionary', toggle: true },
+    { icon: '\u2637', title: 'My dictionary', value: '1,284' }
+  ]},
+  { name: 'Sound', rows: [
+    { icon: '\u266A', title: 'Volume', seg: ['0','1','2','3'], active: '2' },
+    { icon: '\u2248', title: 'Vibration strength', seg: ['S','M','L'], active: 'S' },
+    { icon: '\u25B6', title: 'Sound type', seg: ['1','2','3','4'], active: '3' },
+    { icon: '\u25C9', title: 'Voice-over feedback', sub: 'Speaks each key for blind typing', toggle: false }
+  ]}
+];
+
+function buildVals() {
+    const swatch = (t) => [t.kbBg, t.key, t.fnKey, t.keyText, t.accent, t.hint].map(c => ({
+      style: { flex: 1, background: c }
+    }));
+    const mk = (id, t) => ({
+      id: id, name: t.name, theme: t, swatches: swatch(t),
+      codes: t.kbBg + ' · ' + t.key + ' · ' + t.accent,
+      badge: {
+        font: '400 10.5px/1 ui-monospace,Menlo,monospace', background: 'rgba(0,0,0,0.08)',
+        color: '#26241F', padding: '3px 6px', borderRadius: 4
+      }
+    });
+
+    const settings = SETTINGS.map(sec => ({
+      name: sec.name,
+      rows: sec.rows.map(r => {
+        const on = r.toggle === true;
+        return {
+          icon: r.icon, title: r.title, sub: r.sub || null, value: r.value || null,
+          isToggle: r.toggle !== undefined, isSeg: !!r.seg,
+          trackStyle: {
+            width: 42, height: 25, borderRadius: 999, flexShrink: 0, padding: 2,
+            boxSizing: 'border-box', display: 'flex', justifyContent: on ? 'flex-end' : 'flex-start',
+            background: on ? '#7E9A80' : 'rgba(0,0,0,0.14)'
+          },
+          knobStyle: {
+            width: 21, height: 21, borderRadius: '50%', background: '#fff',
+            boxShadow: '0 1px 2px rgba(0,0,0,0.2)'
+          },
+          opts: (r.seg || []).map(o => ({
+            t: o,
+            style: {
+              minWidth: 26, height: 26, borderRadius: 8, display: 'flex', alignItems: 'center',
+              justifyContent: 'center', padding: '0 6px', boxSizing: 'border-box',
+              font: '500 12.5px/1 DM Sans, sans-serif',
+              background: o === r.active ? '#7E9A80' : 'rgba(0,0,0,0.055)',
+              color: o === r.active ? '#fff' : '#6E6659'
+            }
+          }))
+        };
+      })
+    }));
+
+    const tiles = TILES.map(t => ({
+      name: t.name, icon: t.icon,
+      style: {
+        aspectRatio: '1 / 1', borderRadius: 12, background: t.bg, display: 'flex',
+        flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6,
+        color: t.name === 'Add' ? '#6E6659' : '#fff'
+      },
+      labelStyle: {
+        font: '500 10px/1.1 DM Sans, sans-serif', textAlign: 'center',
+        color: t.name === 'Add' ? '#6E6659' : 'rgba(255,255,255,0.95)'
+      }
+    }));
+
+    const shelf = ['\u25A3', '\u2261', '\u270E'].map((icon, i) => ({
+      icon: icon,
+      style: {
+        width: 36, height: 36, flexShrink: 0, borderRadius: 11, display: 'flex',
+        alignItems: 'center', justifyContent: 'center', color: '#fff',
+        background: ['#8FC6CF', '#86C3B2', '#A8C58C'][i]
+      }
+    })).concat([{
+      icon: '\uFF0B',
+      style: {
+        width: 36, height: 36, flexShrink: 0, borderRadius: 11, display: 'flex',
+        alignItems: 'center', justifyContent: 'center', color: '#8A8377',
+        border: '1px dashed rgba(0,0,0,0.18)'
+      }
+    }]);
+
+    return {
+      sage: SAGE, clay: CLAY, mauve: MAUVE, oat: OAT, claudeLight: CL, claudeDark: CD,
+      themeList: [mk('T1', SAGE), mk('T2', CLAY), mk('T3', MAUVE), mk('T4', CL), mk('T5', CD)],
+      candsShift: [{ t: 'Yes', active: true, sub: true }, { t: 'Yep' }, { t: '\u{1F3AB}', emoji: true }],
+      candsSym: [{ t: '10:30', active: true }, { t: '$40' }, { t: '\u2014' }],
+      candsEmoji: [{ t: 'Recent' }, { t: '\u{1F60A}', emoji: true }, { t: '\u{1F389}', emoji: true }, { t: '\u2764\uFE0F', emoji: true }],
+      candsAlt: [{ t: 'hello', active: true, sub: true }, { t: 'jello' }, { t: 'hallo' }],
+      candsRaw: [{ t: 'teh', active: true, sub: true }, { t: 'the' }, { t: 'ten' }],
+      tiles: tiles, shelf: shelf, settings: settings
+    };
+}
+
+const VALS = buildVals();
+
+class Component extends DCLogic {
+  renderVals() {
+    const size = this.props.kbSize || 'L';
+    const brand = this.props.brand === undefined ? 'atom' : this.props.brand;
+    const key = size + '|' + brand;
+    if (this._key !== key) {
+      this._key = key;
+      this._vals = Object.assign({}, VALS, { kbSize: size, brand: brand });
+    }
+    return this._vals;
+  }
+}
+</script>
+</body>
+</html>

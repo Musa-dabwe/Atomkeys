@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  PLACEHOLDER launcher icon. A real icon set is a Phase 9.2 decision.
+  Adaptive-icon foreground: 108x108dp canvas, 72x72dp centre safe zone (18dp inset each side).
+  Drawn as a keycap outline with an "A" mark.
+-->
+<vector xmlns:android="http://schemas.android.com/apk/res/android"
+    android:width="108dp"
+    android:height="108dp"
+    android:viewportWidth="108"
+    android:viewportHeight="108">
+
+    <!-- keycap: rounded square inside the safe zone -->
+    <path
+        android:fillColor="#FFFFFF"
+        android:pathData="M34,32h40a8,8 0 0 1 8,8v28a8,8 0 0 1 -8,8H34a8,8 0 0 1 -8,-8V40a8,8 0 0 1 8,-8z" />
+
+    <!-- "A" cut out of the keycap -->
+    <path
+        android:fillColor="#7E9A80"
+        android:pathData="M54,42l-11,26h5.4l2.2,-5.6h10.2l2.2,5.6H68L57,42zM54,49.4l3.3,8.6h-6.6z" />
+</vector>

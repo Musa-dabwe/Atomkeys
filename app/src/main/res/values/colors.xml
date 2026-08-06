@@ -1,0 +1,5 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Sage Mist accent, from AtomKeyboard.dc.html. Placeholder icon background (Phase 9.2). -->
+    <color name="ic_launcher_background">#7E9A80</color>
+</resources>

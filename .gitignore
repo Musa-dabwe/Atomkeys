@@ -1,0 +1,25 @@
+# Gradle
+.gradle/
+# Note: `build/` not `/build` — the root-only form would commit every module's build output.
+build/
+!gradle/wrapper/gradle-wrapper.jar
+
+# Local SDK paths and machine-specific config
+local.properties
+
+# Signing material — Phase 10. Never commit these.
+*.jks
+*.keystore
+keystore.properties
+signing.properties
+
+# IDE
+*.iml
+.idea/
+!.idea/codeStyles/
+.externalNativeBuild
+.cxx
+/captures
+
+# OS
+.DS_Store
