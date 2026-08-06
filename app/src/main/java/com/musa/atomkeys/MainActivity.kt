@@ -13,7 +13,12 @@ import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.rememberScrollState
+import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
@@ -25,11 +30,15 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.unit.dp
+import com.musa.atomkeys.ime.CrashGuard
 import com.musa.atomkeys.ui.theme.AtomKeysTheme
 
 /**
- * Phase 0 spike driver. Gives the spike keyboard somewhere to type, and shortcuts to the two system
- * screens needed to enable it. The real setup wizard is Phase 5.3.
+ * Phase 1 host for the app side.
+ *
+ * Currently just enough to enable the keyboard and type against it, plus the reset/diagnostics path
+ * that roadmap 1.4 requires be reachable from the app rather than only from the keyboard. The real
+ * setup wizard is Phase 5.3 and the settings screens are Phase 5.2.
  */
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -37,8 +46,8 @@ class MainActivity : ComponentActivity() {
         enableEdgeToEdge()
         setContent {
             AtomKeysTheme {
-                Scaffold(modifier = Modifier.fillMaxSize()) { innerPadding ->
-                    SpikeHarness(Modifier.padding(innerPadding))
+                Scaffold(modifier = Modifier.fillMaxSize()) { padding ->
+                    SetupScreen(Modifier.padding(padding))
                 }
             }
         }
@@ -46,20 +55,23 @@ class MainActivity : ComponentActivity() {
 }
 
 @Composable
-private fun SpikeHarness(modifier: Modifier = Modifier) {
+private fun SetupScreen(modifier: Modifier = Modifier) {
     val context = LocalContext.current
     var text by remember { mutableStateOf("") }
+    var crashLog by remember { mutableStateOf(readCrashLog(context)) }
 
     Column(
-        modifier = modifier.fillMaxSize().padding(20.dp),
+        modifier = modifier
+            .fillMaxSize()
+            .verticalScroll(rememberScrollState())
+            .padding(20.dp),
         verticalArrangement = Arrangement.spacedBy(12.dp),
     ) {
-        Text("Phase 0 spike harness")
+        Text("AtomKeys", style = MaterialTheme.typography.headlineSmall)
         Text(
-            "1. Enable \"AtomKeys (Phase 0 spike)\" in system settings.\n" +
-                "2. Switch to it with the picker.\n" +
-                "3. Type below. Metrics render in the keyboard's headroom band and go to " +
-                "logcat under the tag AtomSpike."
+            "Phase 1: the keyboard registers, types, and contains its own crashes. " +
+                "Layout, themes, gestures and correction come in later phases.",
+            style = MaterialTheme.typography.bodyMedium,
         )
 
         Button(
@@ -70,7 +82,7 @@ private fun SpikeHarness(modifier: Modifier = Modifier) {
                 )
             },
             modifier = Modifier.fillMaxWidth(),
-        ) { Text("Open input-method settings") }
+        ) { Text("1 · Enable AtomKeys in system settings") }
 
         Button(
             onClick = {
@@ -79,13 +91,39 @@ private fun SpikeHarness(modifier: Modifier = Modifier) {
                 imm.showInputMethodPicker()
             },
             modifier = Modifier.fillMaxWidth(),
-        ) { Text("Show keyboard picker") }
+        ) { Text("2 · Switch to AtomKeys") }
 
         OutlinedTextField(
             value = text,
             onValueChange = { text = it },
-            label = { Text("Type here") },
+            label = { Text("3 · Type here to test") },
             modifier = Modifier.fillMaxWidth(),
         )
+
+        HorizontalDivider(Modifier.padding(vertical = 8.dp))
+
+        Text("Diagnostics", style = MaterialTheme.typography.titleMedium)
+        Text(
+            text = crashLog?.let { "Crash log present (${it.length} chars)" }
+                ?: "No crashes recorded.",
+            style = MaterialTheme.typography.bodySmall,
+        )
+        crashLog?.let { log ->
+            Text(
+                text = log.take(1200),
+                style = MaterialTheme.typography.bodySmall,
+                fontFamily = androidx.compose.ui.text.font.FontFamily.Monospace,
+            )
+        }
+        OutlinedButton(
+            onClick = {
+                CrashGuard.clearLog(context)
+                crashLog = null
+            },
+            modifier = Modifier.fillMaxWidth(),
+        ) { Text("Clear crash log") }
     }
 }
+
+private fun readCrashLog(context: Context): String? =
+    CrashGuard.logFile(context)?.runCatching { readText() }?.getOrNull()

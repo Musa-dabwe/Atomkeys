@@ -1,4 +1,12 @@
 [versions]
+# --- Single source of truth for SDK levels, shared by all four modules. ---
+# Read as `libs.versions.compileSdk.get().toInt()`. Chosen over a buildSrc convention plugin:
+# for four modules that would add an AGP/KGP classpath to juggle and invalidate every build on
+# change, to centralise three integers. Revisit if module count grows or config diverges.
+compileSdk = "37"   # forced by androidx.core:core-ktx 1.19.0
+targetSdk = "36"    # deliberately behind compileSdk — no opt-in to new runtime behaviour yet
+minSdk = "26"       # VibrationEffect, IME_FLAG_NO_PERSONALIZED_LEARNING, adaptive icons
+
 # Verified against Google Maven / Maven Central on 2026-08-06.
 agp = "9.3.1"
 kotlin = "2.4.10"
@@ -24,6 +32,7 @@ androidx-activity-compose = { group = "androidx.activity", name = "activity-comp
 androidx-compose-bom = { group = "androidx.compose", name = "compose-bom", version.ref = "composeBom" }
 androidx-ui = { group = "androidx.compose.ui", name = "ui" }
 androidx-ui-graphics = { group = "androidx.compose.ui", name = "ui-graphics" }
+androidx-ui-text = { group = "androidx.compose.ui", name = "ui-text" }
 androidx-ui-tooling = { group = "androidx.compose.ui", name = "ui-tooling" }
 androidx-ui-tooling-preview = { group = "androidx.compose.ui", name = "ui-tooling-preview" }
 androidx-ui-test-manifest = { group = "androidx.compose.ui", name = "ui-test-manifest" }

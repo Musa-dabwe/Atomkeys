@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Input-method metadata. Phase 1 declares a single English (US) QWERTY subtype; the additional
+  layouts (AZERTY / QWERTZ / Dvorak) and their subtypes are Phase 11.
+
+  android:settingsActivity gives the system's keyboard list a "settings" affordance that opens the
+  AtomKeys app directly, which is the discoverable route to the Phase 5 settings screens.
+-->
+<input-method
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    android:settingsActivity="com.musa.atomkeys.MainActivity"
+    android:supportsInlineSuggestions="false">
+    <subtype
+        android:name="@string/subtype_en_us"
+        android:label="@string/subtype_en_us"
+        android:imeSubtypeLocale="en_US"
+        android:imeSubtypeMode="keyboard"
+        android:isAsciiCapable="true" />
+</input-method>

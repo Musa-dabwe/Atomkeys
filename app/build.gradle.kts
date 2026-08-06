@@ -5,14 +5,12 @@ plugins {
 
 android {
     namespace = "com.musa.atomkeys"
-    // 37 is required by androidx.core:core-ktx 1.19.0. targetSdk stays at 36 deliberately:
-    // compiling against newer APIs is independent of opting in to new runtime behaviour.
-    compileSdk = 37
+    compileSdk = libs.versions.compileSdk.get().toInt()
 
     defaultConfig {
         applicationId = "com.musa.atomkeys"
-        minSdk = 26
-        targetSdk = 36
+        minSdk = libs.versions.minSdk.get().toInt()
+        targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
         versionName = "1.0"
 
@@ -46,6 +44,10 @@ kotlin {
 }
 
 dependencies {
+    implementation(project(":ime"))
+    implementation(project(":design"))
+    implementation(project(":engine"))
+
     implementation(libs.androidx.core.ktx)
     implementation(libs.androidx.lifecycle.runtime.ktx)
     implementation(libs.androidx.activity.compose)
@@ -54,13 +56,6 @@ dependencies {
     implementation(libs.androidx.ui.graphics)
     implementation(libs.androidx.ui.tooling.preview)
     implementation(libs.androidx.material3)
-    implementation(libs.androidx.appcompat)
-    implementation(libs.material)
-
-    // Phase 0.1 spike: view-tree owners required to host Compose inside an InputMethodService.
-    implementation(libs.androidx.lifecycle.runtime.compose)
-    implementation(libs.androidx.lifecycle.viewmodel.compose)
-    implementation(libs.androidx.savedstate)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -1,0 +1,24 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <application>
+        <!--
+          The IME service is declared in the library that owns it, so :app does not have to know the
+          registration details. android:settingsActivity points into :app, which is allowed because
+          manifest merging resolves it against the final application id.
+        -->
+        <service
+            android:name="com.musa.atomkeys.ime.AtomKeyboardService"
+            android:exported="true"
+            android:label="@string/ime_label"
+            android:permission="android.permission.BIND_INPUT_METHOD">
+            <intent-filter>
+                <action android:name="android.view.InputMethod" />
+            </intent-filter>
+            <meta-data
+                android:name="android.view.im"
+                android:resource="@xml/method" />
+        </service>
+    </application>
+
+</manifest>
