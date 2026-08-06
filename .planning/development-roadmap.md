@@ -287,9 +287,12 @@ Goal: a keyboard that can be enabled on a real device and commits one character.
 
 ### 1.1 Version control & toolchain
 
-- [ ] `git init`, commit the current scaffold and the two design docs as the baseline
-- [ ] Confirm `.gitignore` covers `local.properties`, `build/`, `.gradle/`, and (ahead of Phase 10)
+- [x] `git init`, commit the current scaffold and the two design docs as the baseline
+- [x] Confirm `.gitignore` covers `local.properties`, `build/`, `.gradle/`, and (ahead of Phase 10)
       keystore files
+      → **the scaffold's rule was wrong**: it ignored `/build` (root only), which would have committed
+      every module's build output once the split happened. Now `build/`, plus `*.jks` / `*.keystore` /
+      `keystore.properties` for Phase 10.
 - [x] Upgrade AGP, Kotlin, the Compose BOM and `compileSdk` / `targetSdk` to current stable.
       **DONE 2026-08-06.** Versions verified against Google Maven / Maven Central metadata rather than
       assumed; three of the planned targets were wrong.
@@ -333,49 +336,95 @@ Goal: a keyboard that can be enabled on a real device and commits one character.
 
 ### 1.2 Module split
 
-- [ ] Create `:engine` as a pure Kotlin JVM library (`org.jetbrains.kotlin.jvm`) — **no Android
+- [x] Create `:engine` as a pure Kotlin JVM library (`org.jetbrains.kotlin.jvm`) — **no Android
       dependencies, enforced by having no Android plugin applied**
-- [ ] Create `:design` as an Android library with Compose enabled
-- [ ] Create `:ime` as an Android library with Compose enabled
-- [ ] Keep `:app` as the application module; wire dependencies per the module graph above
-- [ ] Register all modules in `settings.gradle.kts`
-- [ ] Move Compose/Android config into a convention plugin or shared block so four modules don't
+      → holds the spike-0.4 `Editor` interface plus `FakeEditor`, which records an **ordered call log**
+      so Phase 4/8.2 can assert the operation *sequence*, not just resulting text. 18 tests.
+- [x] Create `:design` as an Android library with Compose enabled
+- [x] Create `:ime` as an Android library with Compose enabled — owns its own manifest and
+      `method.xml`, so `:app` need not know the IME registration details.
+- [x] Keep `:app` as the application module; wire dependencies per the module graph above
+- [x] Register all modules in `settings.gradle.kts`
+- [x] Move Compose/Android config into a convention plugin or shared block so four modules don't
       drift apart
+      → **chose the version catalog over a buildSrc convention plugin.** `compileSdk`/`targetSdk`/
+      `minSdk` live once in `libs.versions.toml`, read as `libs.versions.compileSdk.get().toInt()`.
+      For four modules a convention plugin would add an AGP/KGP classpath to juggle and invalidate
+      every build on change, to centralise three integers. Revisit if config diverges.
+      Gotcha hit: every plugin a subproject applies must also be declared at the root with
+      `apply false`, or it fails with *"already on the classpath with an unknown version"*.
 - [ ] `:ime` exposes a reusable `AtomKeyboardPreview` composable (no service wiring) so `:app`
       settings can render a **live keyboard preview** (5.2) and Roborazzi (8.4) can screenshot the
       matrix through one shared renderer.
+      → **deferred to Phase 2/3.** There is no real keyboard to preview yet; `PhaseOneKeyboard` is
+      throwaway scaffolding. Build this against the actual composable rather than the placeholder.
 
 ### 1.3 IME registration
 
-- [ ] `AtomKeyboardService : InputMethodService` in `:ime`
-- [ ] Declare it in the manifest with `android:permission="android.permission.BIND_INPUT_METHOD"`,
+- [x] `AtomKeyboardService : InputMethodService` in `:ime`
+- [x] Declare it in the manifest with `android:permission="android.permission.BIND_INPUT_METHOD"`,
       `android:exported="true"`, an `<intent-filter>` for `android.view.InputMethod`, and
-      `android:configChanges` covering orientation/screen-size/keyboard-hidden
-- [ ] `<meta-data android:name="android.view.im" android:resource="@xml/method"/>`
-- [ ] `res/xml/method.xml` with an English (US) QWERTY subtype, and `android:settingsActivity`
+      ~~`android:configChanges` covering orientation/screen-size/keyboard-hidden~~
+      → **this roadmap item was wrong.** `android:configChanges` is an `<activity>` attribute; a
+      `<service>` is not recreated on a configuration change, so it does not apply. The IME instead
+      receives `Service.onConfigurationChanged`. Declared in `:ime`'s own manifest and merged into
+      `:app`, so `:app` need not know the registration details.
+- [x] `<meta-data android:name="android.view.im" android:resource="@xml/method"/>`
+- [x] `res/xml/method.xml` with an English (US) QWERTY subtype, and `android:settingsActivity`
       pointing at the settings screen
-- [ ] Apply the Phase 0.1 lifecycle-owner pattern to the input view
+- [x] Apply the Phase 0.1 lifecycle-owner pattern to the input view
+      → owners on `window.window.decorView`, lifecycle to RESUMED on `onStartInputView`.
+      **Hardened beyond the spike:** the spike latched a boolean once attached, but the decor view can
+      be *recreated* on a configuration change, which would resurrect the
+      `ViewTreeLifecycleOwner not found` crash after a rotation. Now tracks the decor-view identity and
+      re-attaches from `onConfigurationChanged`.
 
 ### 1.4 Crash containment ↯ risk
 
 An IME crash is uniquely bad: the user is left with **no keyboard**, and may not be able to type
 their way out of it.
 
-- [ ] Install a top-level guard around key handling and composition so an unexpected exception
+- [x] Install a top-level guard around key handling and composition so an unexpected exception
       degrades to a plain fallback keyboard rather than killing the service
-- [ ] Log to a local file (no network) so a crash during dogfooding is diagnosable
-- [ ] Add a "reset to defaults" path reachable from the settings app, not only from the keyboard
+      → `CrashGuard` + `KeyboardCrashState`. A failure **latches** the fallback rather than retrying:
+      retrying a broken composition in a loop crashes repeatedly, and ColorOS marked the app
+      "unstable" when the Phase 0 spike crashed — repeated crashes invite OEM restriction.
+- [x] Log to a local file (no network) so a crash during dogfooding is diagnosable
+      → `filesDir/crash.log`, capped at 128 KB, and tolerant of its own failure so a logging error
+      cannot become a second crash. The app declares **no permissions at all**, INTERNET included.
+- [x] Add a "reset to defaults" path reachable from the settings app, not only from the keyboard
+      → crash-log viewer + clear button in `MainActivity`. Full settings reset lands with Phase 5.1,
+      which is when there are actually settings to reset.
 
 ### 1.5 Fonts
 
-- [ ] Bundle Barlow Semi Condensed (400/500/600) into `res/font` — used for keycaps and hints
-- [ ] Bundle DM Sans (400/500/700) into `res/font` — used for UI, settings and candidate chips
-- [ ] Verify licenses permit bundling (both are OFL on Google Fonts — confirm, don't assume)
+- [x] Bundle Barlow Semi Condensed (400/500/600) into `res/font` — used for keycaps and hints
+      → static instances, 105–110 KB each.
+- [x] Bundle DM Sans (400/500/700) into `res/font` — used for UI, settings and candidate chips
+      → **DM Sans now ships only as a variable font** (`DMSans[opsz,wght].ttf`); Google Fonts no longer
+      publishes static instances. One 240 KB file covers every weight, but each must be requested
+      through its `wght` axis via `FontVariation` — declaring `FontWeight.Medium` alone renders at the
+      default weight. Needs API 26+, which is our minSdk. `FontVariation` is still
+      `@ExperimentalTextApi`, contained to one function.
+- [x] Verify licenses permit bundling (both are OFL on Google Fonts — confirm, don't assume)
+      → confirmed by fetching both `OFL.txt`; the licence explicitly permits *embed*. Its condition is
+      that the notice accompany distribution, so both texts ship in `res/raw/`. Surface them from an
+      in-app licences screen in Phase 9.2.
 - [ ] Subset if APK size matters; keycaps need a small glyph range, DM Sans needs more
+      → **not needed yet.** 552 KB total for all four files. Revisit against Phase 8.5's APK budget.
 
-**Gate:** AtomKeys appears in Android's *Languages & input* → on-screen keyboards list, can be
-selected, and typing into a real text field in a real app commits a hard-coded character. Rotating
-the device and switching apps does not crash it.
+**Gate: PASSED (verified on device 2026-08-06, OPPO Reno3 5G / Android 12).**
+
+- [x] AtomKeys appears in *Manage keyboards* and can be enabled and selected
+- [x] Typing into a real field commits characters — verified `"my name is musa\n"`, exercising the
+      character, space and ✓/Enter paths through `Editor` and `FieldSpec`
+- [x] Rotating the device does not crash it — portrait → landscape, keyboard re-raised and typed in
+      landscape, **0 FATAL EXCEPTION, 0 `ViewTreeLifecycleOwner` errors, no `crash.log` written**
+- [x] Switching apps does not crash it — home and back, keyboard re-raised
+
+**Observed, feeding later phases:** at key height L the keyboard occupies most of a landscape screen.
+That is empirical support for the 8.6 decision to clamp effective height to `M` in landscape, hide the
+numbers row, and collapse the candidate strip.
 
 ---
 

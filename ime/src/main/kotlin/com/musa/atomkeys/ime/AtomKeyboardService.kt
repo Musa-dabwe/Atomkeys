@@ -75,7 +75,15 @@ class AtomKeyboardService :
         fieldSpec = { fieldSpec },
     )
 
-    private var ownersAttached = false
+    /**
+     * The decor view we last attached owners to.
+     *
+     * Not a boolean latch: the IME window's decor view can be **recreated** on a configuration
+     * change (rotation, theme switch, split-screen). A latched flag would skip re-attaching, and the
+     * next composition would crash with the same `ViewTreeLifecycleOwner not found` that Phase 0.1
+     * diagnosed — but only after a rotation, which is exactly the kind of bug that ships.
+     */
+    private var ownedDecorView: View? = null
 
     override fun onCreate() {
         // Attach + restore must happen while the lifecycle is still INITIALIZED; restoring after it
@@ -112,12 +120,21 @@ class AtomKeyboardService :
 
     /** The Phase 0.1 fix. `getWindow()` here is a Dialog; its decor view is the hierarchy root. */
     private fun attachOwnersToWindowDecor() {
-        if (ownersAttached) return
         val decor = window?.window?.decorView ?: return
+        if (decor === ownedDecorView) return
         decor.setViewTreeLifecycleOwner(this)
         decor.setViewTreeViewModelStoreOwner(this)
         decor.setViewTreeSavedStateRegistryOwner(this)
-        ownersAttached = true
+        ownedDecorView = decor
+    }
+
+    /**
+     * Re-attach owners after a configuration change, in case the window was rebuilt.
+     * [attachOwnersToWindowDecor] is idempotent and compares identity, so this is cheap.
+     */
+    override fun onConfigurationChanged(newConfig: android.content.res.Configuration) {
+        super.onConfigurationChanged(newConfig)
+        guarded("onConfigurationChanged") { attachOwnersToWindowDecor() }
     }
 
     override fun onStartInput(info: EditorInfo?, restarting: Boolean) {
