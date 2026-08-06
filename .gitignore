@@ -25,5 +25,8 @@ signing.properties
 .cxx
 /captures
 
+# Device test screenshots
+debug_screens/
+
 # OS
 .DS_Store

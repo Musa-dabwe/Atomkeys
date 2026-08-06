@@ -613,44 +613,53 @@ so the `@Immutable` annotation was dropped rather than replaced.
 Each of these corresponds to a numbered frame in the design doc — build them as previews so they
 can be compared side by side with the source:
 
-- [ ] **L1** Letters, with press bubble on a key
-- [ ] **L2** Shift locked, case-sensitive keycaps (labels uppercase when shift is on)
-- [ ] **L3** Symbols layer
-- [ ] **L4** Emoji layer
-- [ ] **L5** Numbers row extension
-- [ ] **L6** Minimal mode — bottom row hidden, no middle rule
-- [ ] **L7** Invisible keyboard — transparent keys, dashed edges, transparent labels
-- [ ] **L8** Auto-correct off (`AC✕`) with comma as the special key
-- [ ] Shift has three visual states: off (`⇧` fn), on, and locked (`⇪` accent-filled)
+- [x] **L1** Letters, with press bubble on a key
+- [x] **L2** Shift locked, case-sensitive keycaps (labels uppercase when shift is on)
+- [x] **L3** Symbols layer
+- [x] **L4** Emoji layer
+- [x] **L5** Numbers row extension
+- [x] **L6** Minimal mode — bottom row hidden, no middle rule
+- [x] **L7** Invisible keyboard — transparent keys, dashed edges, transparent labels
+- [x] **L8** Auto-correct off (`AC✕`) with comma as the special key
+- [x] Shift has three visual states: off (`⇧` fn), on, and locked (`⇪` accent-filled)
+
+All eight frames plus the shift states live in `AtomKeyboardPreview.kt` (and `ShiftStatesPreview.kt`
+for the three shift visuals), named to match the doc. `Symbols page 2` is an extra preview beyond
+the doc's frames, since it exists to back the confirmed `#+=` decision.
 
 ### 3.3 Chrome
 
-- [ ] Candidate strip: 48dp tall — 40dp `⋯` extension button on a `chip` background, scrolling chip
+- [x] Candidate strip: 48dp tall — 40dp `⋯` extension button on a `chip` background, scrolling chip
       row (5×14 padding, 16dp radius, `chipActive`/`onChipActive` for the selected chip), 40dp mic
       button
-- [ ] Sub-dots under the active chip (`·`·`·`, 11sp, 2px letter-spacing) indicating more candidates
+- [x] Sub-dots under the active chip (`·`·`·`, 11sp, 2px letter-spacing) indicating more candidates
       are available below
-- [ ] Middle-row rule: 2.5dp tall, gradient `transparent → accent → transparent`, inset by
+- [x] Middle-row rule: 2.5dp tall, gradient `transparent → accent → transparent`, inset by
       `h * 0.5` horizontally, with the `atomShimmer` animation (opacity 0.14 → 0.55 → 0.14 over
-      2.6s, ease-in-out, infinite). Use `rememberInfiniteTransition`
-- [ ] Press bubble per Phase 0.2's answer — 46×54, 12dp radius, `key` fill, `keyEdge` border, a
+      2.6s, ease-in-out, infinite). Uses `rememberInfiniteTransition`
+- [x] Press bubble per Phase 0.2's answer — 46×54, 12dp radius, `key` fill, `keyEdge` border, a
       soft drop shadow, 30sp label, positioned above the pressed keycap
-- [ ] Gesture affordances (G1–G5): the directional gradient trail and the accent pill label.
-      **Decision (recommended):** shipping keyboard shows **no** gesture pill — it was annotation /
-      documentation (the frames are labelled "trail + pill shown at M swipe length" as
-      annotations), and showing every keystroke is noise. Gate them behind `BuildConfig.DEBUG` /
-      a hidden flag so gestures can still be dogfooded.
+- [x] Gesture affordances (G1–G5): the directional gradient trail and the accent pill label,
+      rendered by `AtomKeyboard` only when a `Gesture` is passed in.
+      **Decision (confirmed):** shipping keyboard shows **no** gesture pill — the service never
+      passes a `Gesture`, so the affordance is only in the previews (`GesturePreviews.kt`) and any
+      future dogfood call site. This is the "hidden flag" the roadmap called for, with no
+      BuildConfig plumbing needed. Trail geometry (`left`/`top`/`width`/`height` percentages) and
+      the pill are transcribed verbatim from `AtomKeys.dc.html`'s `trails`/`pillStyle`.
 
 ### 3.4 Frame accuracy
 
-- [ ] Reproduce **D1–D3** (in-context device frames): Sage Mist while composing, Claude Light with
-      shift held, Claude Dark on the emoji layer
-- [ ] Verify against the four key heights (S/M/L/XL) with `showStrip = false, minimal = true`, as
-      the height section of the doc renders them
+- [x] Reproduce **D1–D3** (in-context device frames): Sage Mist while composing (Notes app), Claude
+      Light with shift held (chat), Claude Dark on the emoji layer — in `DeviceFramePreviews.kt`.
+      Each reproduces the **screen** (credible status bar + app chrome + keyboard) at the doc's
+      412×892 canvas; the AndroidDevice bezel itself comes from `android-frame.jsx`, which is not in
+      this repo and is out of scope per roadmap 8.2.
+- [x] Verify against the four key heights (S/M/L/XL) with `showStrip = false, minimal = true`, as
+      the height section of the doc renders them — the `Heights · S M L XL` preview.
 
 **Gate:** every frame L1–L8, D1–D3 and the four heights is reproducible as a Compose preview and
 visually matches the design doc. A reviewer holding the HTML next to the previews finds no
-discrepancy in color, weight or proportion.
+discrepancy in colour, weight or proportion. **MANUAL — hold the previews next to the doc.**
 
 ---
 

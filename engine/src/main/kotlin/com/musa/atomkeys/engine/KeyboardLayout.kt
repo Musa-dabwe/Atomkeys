@@ -69,6 +69,31 @@ enum class ShiftState {
 enum class SpecialKey { SMILEY, COMMA }
 
 /**
+ * The five gestures the design doc annotates as G1–G5.
+ *
+ * Phase 3.3 only renders the **affordance** — the gradient trail and the accent pill label the doc
+ * draws over the grid to explain each gesture. Gesture *detection* is Phase 4.3's. The enum is the
+ * shared vocabulary both sides use, and the pill label is the annotation text from
+ * `AtomKeys.dc.html`'s `gLabels`.
+ */
+enum class Gesture(val label: String) {
+    /** Swipe right — insert a space, or accept the highlighted candidate. */
+    RIGHT("swipe right → space / accept"),
+
+    /** Swipe left — delete the previous whole word. */
+    LEFT("← swipe left • delete word"),
+
+    /** Swipe down — cycle to the next candidate. */
+    DOWN("swipe down ↓ next candidate"),
+
+    /** Swipe up — revert the correction, and learn the raw word. */
+    UP("swipe up ↑ revert correction"),
+
+    /** Hold the spacebar — cursor control and select-all. */
+    SPACE("hold space • cursor control"),
+}
+
+/**
  * What a key does when it fires. Phase 4 interprets these against the `Editor`; the layout model
  * only declares them, so that "what is this key" has exactly one answer and the renderer, the
  * hit-tester and the commit path cannot drift apart.

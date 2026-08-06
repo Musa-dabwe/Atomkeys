@@ -20,6 +20,10 @@ import androidx.savedstate.SavedStateRegistryController
 import androidx.savedstate.SavedStateRegistryOwner
 import androidx.savedstate.setViewTreeSavedStateRegistryOwner
 import com.musa.atomkeys.engine.CapsMode
+import com.musa.atomkeys.engine.KeyAction
+import com.musa.atomkeys.engine.KeyboardConfig
+import com.musa.atomkeys.engine.Layer
+import com.musa.atomkeys.engine.ShiftState
 
 /**
  * The AtomKeys input method.
@@ -75,6 +79,9 @@ class AtomKeyboardService :
         fieldSpec = { fieldSpec },
     )
 
+    /** Reactive keyboard configuration — drives recomposition when shift/layer/AC changes. */
+    private var keyboardConfig by mutableStateOf(KeyboardConfig())
+
     /**
      * The decor view we last attached owners to.
      *
@@ -107,11 +114,9 @@ class AtomKeyboardService :
                         onSpace = { guarded("fallback space") { editor.commit(" ") } },
                     )
                 } else {
-                    PhaseOneKeyboard(
-                        onKey = ::onCharKey,
-                        onBackspace = { guarded("backspace") { editor.deleteBefore(1) } },
-                        onSpace = { guarded("space") { editor.commit(" ") } },
-                        onEnter = ::onEnterKey,
+                    AtomKeyboard(
+                        config = keyboardConfig,
+                        onAction = ::onKeyAction,
                     )
                 }
             }
@@ -179,19 +184,67 @@ class AtomKeyboardService :
 
     // ------------------------------------------------------------------ key handling
 
-    private fun onCharKey(ch: Char) = guarded("key '$ch'") {
-        // Minimal auto-capitalisation, to prove the FieldSpec/Editor path end to end.
-        // Phase 4.4 owns the real behaviour.
-        val shouldCap = ch.isLetter() && editor.capsMode() != CapsMode.NONE
-        editor.commit(if (shouldCap) ch.uppercaseChar().toString() else ch.toString())
-    }
+    /**
+     * Central dispatcher for all key actions from [AtomKeyboard].
+     *
+     * Each [KeyAction] variant maps to either an editor operation (commit, delete, enter) or a
+     * keyboard-state mutation (shift, layer switch, auto-correct toggle). State mutations update
+     * [keyboardConfig], which triggers recomposition — so the keyboard UI always reflects the
+     * current state.
+     */
+    private fun onKeyAction(action: KeyAction) = guarded("action $action") {
+        when (action) {
+            is KeyAction.Commit -> {
+                editor.commit(action.text)
+                // After committing a letter while shift is MANUAL, return to OFF.
+                if (keyboardConfig.shift == ShiftState.MANUAL) {
+                    keyboardConfig = keyboardConfig.copy(shift = ShiftState.OFF)
+                }
+            }
 
-    private fun onEnterKey() = guarded("enter") {
-        // ✓ means different things per field — send/search/next, or a newline in a multiline field.
-        if (fieldSpec.isMultiline) {
-            editor.sendKey(KeyEvent.KEYCODE_ENTER)
-        } else {
-            editor.performAction()
+            is KeyAction.Shift -> {
+                // Cycle: OFF → MANUAL → LOCKED → OFF
+                val nextShift = when (keyboardConfig.shift) {
+                    ShiftState.OFF -> ShiftState.MANUAL
+                    ShiftState.MANUAL -> ShiftState.LOCKED
+                    ShiftState.AUTOMATIC -> ShiftState.LOCKED
+                    ShiftState.LOCKED -> ShiftState.OFF
+                }
+                keyboardConfig = keyboardConfig.copy(shift = nextShift)
+            }
+
+            is KeyAction.Backspace -> {
+                editor.deleteBefore(1)
+            }
+
+            is KeyAction.Space -> {
+                editor.commit(" ")
+                // Auto-capitalisation after space if the field requests it.
+                if (editor.capsMode() != CapsMode.NONE && keyboardConfig.shift == ShiftState.OFF) {
+                    keyboardConfig = keyboardConfig.copy(shift = ShiftState.AUTOMATIC)
+                }
+            }
+
+            is KeyAction.Action -> {
+                // ✓ means different things per field — send/search/next, or a newline in multiline.
+                if (fieldSpec.isMultiline) {
+                    editor.sendKey(KeyEvent.KEYCODE_ENTER)
+                } else {
+                    editor.performAction()
+                }
+            }
+
+            is KeyAction.SwitchLayer -> {
+                keyboardConfig = keyboardConfig.copy(layer = action.layer)
+                // Reset shift when leaving letters layer.
+                if (action.layer != Layer.LETTERS) {
+                    keyboardConfig = keyboardConfig.copy(shift = ShiftState.OFF)
+                }
+            }
+
+            is KeyAction.ToggleAutoCorrect -> {
+                keyboardConfig = keyboardConfig.copy(autoCorrect = !keyboardConfig.autoCorrect)
+            }
         }
     }
 
