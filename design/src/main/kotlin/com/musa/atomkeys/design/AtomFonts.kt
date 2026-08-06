@@ -1,6 +1,5 @@
 package com.musa.atomkeys.design
 
-import androidx.compose.runtime.Composable
 import androidx.compose.ui.text.ExperimentalTextApi
 import androidx.compose.ui.text.font.Font
 import androidx.compose.ui.text.font.FontFamily
@@ -60,8 +59,10 @@ enum class KeycapFont {
     ATOM,
     ;
 
+    // Not `@Composable`: both branches are plain values that read nothing from the composition, and
+    // a composable getter cannot be called from the `@ReadOnlyComposable` text styles in AtomType.
     val family: FontFamily
-        @Composable get() = when (this) {
+        get() = when (this) {
             OS -> FontFamily.Default
             ATOM -> AtomFonts.BarlowSemiCondensed
         }

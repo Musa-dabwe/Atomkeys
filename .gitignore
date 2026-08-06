@@ -13,6 +13,10 @@ local.properties
 keystore.properties
 signing.properties
 
+# Crash / profiling dumps. A Gradle OOM during the Phase 1.1 toolchain upgrade dropped a 574 MB
+# `java_pid*.hprof` here and it got committed — the blob was later purged from history.
+*.hprof
+
 # IDE
 *.iml
 .idea/

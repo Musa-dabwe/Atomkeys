@@ -440,17 +440,31 @@ The design doc defines **six** token sets, each with the **same 14 keys**:
 `kbBg`, `key`, `keyEdge`, `keyShadow`, `keyText`, `fnKey`, `fnText`, `hint`, `accent`, `onAccent`,
 `chip`, `chipText`, `chipActive`, `onChipActive`
 
-- [ ] `AtomTheme` data class over the 14 tokens, plus a `name`
-- [ ] Transcribe all six token sets **verbatim** from `AtomKeyboard.dc.html` (the `SAGE`, `CLAY`,
+- [x] `AtomTheme` data class over the 14 tokens, plus a `name`
+      → `design/AtomTheme.kt`. `@Immutable`, so Compose skips any composable whose only changed
+      input is an equal theme.
+- [x] Transcribe all six token sets **verbatim** from `AtomKeyboard.dc.html` (the `SAGE`, `CLAY`,
       `MAUVE`, `OAT`, `CL`, `CD` constants): Sage Mist, Clay, Mauve, Oat, Claude Light, Claude Dark.
       **Decision (confirmed):** only **five are selectable** in the theme picker (Sage Mist, Clay,
       Mauve, Claude Light, Claude Dark) per the doc; **Oat stays internal** (extension-deck chrome
       E1 + FALLBACK). All six token tables are still transcribed and tested; the picker exposes five.
-- [ ] `LocalAtomTheme` CompositionLocal + an `AtomKeyboardTheme` wrapper composable
-- [ ] Note that `chip` is a translucent value (`rgba(0,0,0,0.05)`, and `rgba(255,255,255,0.07)` in
+      → `AtomThemes.selectable` (5) vs `AtomThemes.all` (6) makes the distinction structural rather
+      than a comment. **Discrepancy found between the two design docs:** `AtomKeyboard.dc.html`'s
+      `OAT` has `hint: '#A0977F'`, `AtomKeys.dc.html`'s inline `FALLBACK` has `hint: '#A69C8B'`.
+      Took the theme table as authoritative; recorded in the `Oat` KDoc.
+- [x] `LocalAtomTheme` CompositionLocal + an `AtomKeyboardTheme` wrapper composable
+      → `staticCompositionLocalOf`, not the tracking variant: a theme change re-themes every surface,
+      so per-read bookkeeping on the typing hot path buys nothing. Two further locals ride along —
+      `LocalKeySize` and `LocalKeycapFont` — so a keycap needs no size/font parameters.
+- [x] Note that `chip` is a translucent value (`rgba(0,0,0,0.05)`, and `rgba(255,255,255,0.07)` in
       Claude Dark) — it composites over `kbBg`, so keep the alpha rather than flattening it
-- [ ] Delete the template `Color.kt` purple/pink values and the `dynamicColor` branch in `Theme.kt`
-- [ ] Keep a separate Material3 theme for the settings app chrome only
+      → kept as alpha. Claude Light is a third case the roadmap did not note: **0.055**, not 0.05.
+- [x] Delete the template `Color.kt` purple/pink values and the `dynamicColor` branch in `Theme.kt`
+- [x] Keep a separate Material3 theme for the settings app chrome only
+      → `:app`'s `AtomKeysTheme` now carries a warm-sand/coral scheme instead of Purple/Pink, and
+      `Typography` uses DM Sans. Dynamic colour is gone deliberately: the settings screens host a
+      **live keyboard preview** (5.2), and wallpaper-derived chrome around a fixed-palette keyboard
+      would read as a mismatch.
 
 ### 2.2 Sizing scale
 
@@ -468,29 +482,67 @@ from the chosen height `h`:
 | hint label | `max(9, round(h * 0.17))`, positioned `top h*0.1`, `right h*0.11`, 0.55 opacity |
 | wrap padding | `8dp` top, `gap` horizontal, `gap + 4` bottom |
 
-- [ ] `KeySize` enum (S/M/L/XL) with `height` and the derived values as computed properties
-- [ ] Put the derivation math in `:engine` so it is unit-testable without an emulator
-- [ ] Unit-test the derived values against the numbers above at all four sizes
+- [x] `KeySize` enum (S/M/L/XL) with `height` and the derived values as computed properties
+      → `engine/KeyMetrics.kt`. Alongside it, `LabelScale` names all eight per-key scale factors the
+      source passes to `labelStyle()`, and `AtomDimens` holds the sizes the doc states outright
+      rather than derives (strip 48dp, chip 16dp radius, bubble 46×54, …).
+- [x] Put the derivation math in `:engine` so it is unit-testable without an emulator
+      → `:design` gained an `api(project(":engine"))` edge; `design/Dimens.kt` only wraps the
+      integers in `Dp`/`TextUnit` and computes nothing.
+- [x] Unit-test the derived values against the numbers above at all four sizes
+      → 16 tests, written as full expected-value tables rather than by re-applying the formula (a
+      test that recomputes the implementation proves nothing). Expected values cross-checked against
+      **JavaScript `Math.round` semantics** — the source rounds half-*up*, Kotlin's `roundToInt`
+      rounds half *away from zero*; they agree here only because every input is positive, and the
+      one input that lands exactly on `.5` (`50 * 0.17`) is checked explicitly.
 
 ### 2.3 Keycap surface
 
-- [ ] Keycap composable reproducing the design's raised look: `1px solid keyEdge` border plus a
+- [x] Keycap composable reproducing the design's raised look: `1px solid keyEdge` border plus a
       `1.5dp` hard bottom shadow in `keyShadow` (`box-shadow: 0 1.5px 0`)
-- [ ] Draw it — **do not use Material elevation**, which produces a soft blurred shadow and
+      → `design/Keycap.kt`. Fill, border and shadow are one `drawBehind` pass. The shadow spills
+      1.5dp **below the keycap's own bounds**, exactly as CSS `box-shadow` does — it is paint, not
+      layout — so Phase 3's row containers must not clip.
+- [x] Draw it — **do not use Material elevation**, which produces a soft blurred shadow and
       allocates a render layer per key
-- [ ] Variants from the source `keyStyle(kind)`: `key`, `fn`, `accent`, `emoji` (transparent, no
+      → and the same reasoning applied to the pressed `scale(0.95)`: `graphicsLayer` is attached
+      **only while a key is pressed**, so a resting grid allocates zero render layers. Spike 0.3
+      measured that press feedback needs nothing beyond Compose's parameter-level skipping, so 26
+      permanent RenderNodes would be cost the measurement says we don't have to pay.
+- [x] Variants from the source `keyStyle(kind)`: `key`, `fn`, `accent`, `emoji` (transparent, no
       border), `pressed` (fnKey fill, accent border, `scale 0.95`, shadow removed), and
       `invisible` (transparent with a dashed `keyEdge` border)
-- [ ] Label styling per kind, including `letterSpacing 0.02em` on fn keys
+      → `KeyKind` covers the four *appearances*; `pressed` and `invisible` are orthogonal flags,
+      matching the source, where they override the fill treatment but the label keeps its original
+      kind's colour. One deliberate non-transcription: CSS does not specify `dashed`'s period, so
+      L7's dash is a chosen 3dp on / 3dp off.
+- [x] Label styling per kind, including `letterSpacing 0.02em` on fn keys
+      → the source's `lineHeight: 1` needs **both** `includeFontPadding = false` and a trimmed
+      `LineHeightStyle` in Compose; without them every label sits a few dp low and the whole grid
+      reads as subtly misaligned.
 
 ### 2.4 Typography
 
-- [ ] `AtomType` exposing the two families and the weights the doc uses
-- [ ] Support the *"Keyboard font: OS | Atom"* setting from the Look section — a switch between
+- [x] `AtomType` exposing the two families and the weights the doc uses
+      → `design/AtomType.kt` covers the chrome that does **not** scale with key height: chips,
+      sub-dots, strip buttons, press bubble, gesture pill. Keycap labels are deliberately absent —
+      they derive from `h`, so `Keycap` computes them from the sizing scale instead.
+- [x] Support the *"Keyboard font: OS | Atom"* setting from the Look section — a switch between
       `FontFamily.Default` and Barlow Semi Condensed for keycaps
+      → `KeycapFont` (already present from 1.5) is now wired through `LocalKeycapFont`. Its `family`
+      getter was `@Composable` and is no longer: both branches are plain values, and a composable
+      getter cannot be called from `AtomType`'s `@ReadOnlyComposable` styles.
 
-**Gate:** a Compose preview renders a single keycap in all six themes at all four sizes, matching
-the design doc's swatches and proportions. Sizing math unit tests pass.
+**Gate: code complete — awaiting the visual comparison.**
+
+- [x] Sizing math unit tests pass — 16 tests green in `:engine`
+- [x] A Compose preview renders a keycap in all six themes at all four sizes
+      → `design/KeycapPreview.kt`, three previews: the 6 × 4 gate matrix, every `keyStyle(kind)`
+      branch and state, and the doc's own theme swatch rows.
+- [ ] **MANUAL — the comparison itself.** Open `KeycapPreview.kt` in Android Studio and hold
+      `AtomKeyboard.dc.html` next to it. Previews cannot be rendered from the command line, so
+      "matches the design doc's swatches and proportions" is not something this build can assert.
+      Phase 8.4's Roborazzi goldens are what make it assertable; until then it is an eyeball check.
 
 ---
 
