@@ -554,24 +554,59 @@ driven by parameters, exactly as the mockup does it.
 ### 3.1 Row & weight model
 
 The mockup lays keys out with CSS flex weights. These map directly to `Modifier.weight`, including
-the invisible spacers:
+the invisible spacers.
 
-- [ ] Letters row 1: 10 keys at weight 1, each with a numeric hint (`1234567890`)
-- [ ] Letters row 2: `spacer(0.5)` + 9 keys + `spacer(0.5)`
-- [ ] Letters row 3: shift (1.5) + `spacer(0.15)` + 7 keys + `spacer(0.15)` + backspace (1.5)
-- [ ] Bottom row: `123`/`ABC` (1.3), special key (1), spacebar (4.2), `AC` (1), `.` (1), ✓ (1.5)
-- [ ] Symbols layer rows, including the `#+=` (1.5) + `spacer(0.2)` + punctuation + `spacer(0.2)` +
+**DONE 2026-08-06.** The model lives in `:engine` — `KeyboardLayout.kt` (structure) and
+`KeyboardGeometry.kt` (resolved rects + hit-testing), 34 tests. It holds no Compose types, for two
+reasons that both trace back to Phase 0:
+
+1. **Spike 0.3's confirmed hit-test bug.** The spike scanned laid-out bounds and compared
+   grid-local pointer coordinates against root-space bounds with a fudge factor; `q t p a h l z m`
+   committed **`qtpahlal`**. `KeyboardGeometry` resolves arithmetically from the same weights the
+   renderer uses, in **one coordinate space** (origin = top-left of the key grid, which is exactly
+   what a `pointerInput` on the grid reports). The spike's failing sequence is now a regression test.
+2. **Phase 6.2 needs key centres** for proximity-weighted scoring, and it is a JVM-tested component,
+   so its geometry source must be JVM-testable too.
+
+`KeyKind` **moved from `:design` to `:engine`** — the row model has to classify keys, and `:design`
+depends on `:engine`, not the reverse. It is a plain enum, which Compose already treats as stable,
+so the `@Immutable` annotation was dropped rather than replaced.
+
+- [x] Letters row 1: 10 keys at weight 1, each with a numeric hint (`1234567890`)
+- [x] Letters row 2: `spacer(0.5)` + 9 keys + `spacer(0.5)`
+- [x] Letters row 3: shift (1.5) + `spacer(0.15)` + 7 keys + `spacer(0.15)` + backspace (1.5)
+- [x] Bottom row: `123`/`ABC` (1.3), special key (1), spacebar (4.2), `AC` (1), `.` (1), ✓ (1.5)
+- [x] Symbols layer rows, including the `#+=` (1.5) + `spacer(0.2)` + punctuation + `spacer(0.2)` +
       backspace (1.5) row
-      **Decision (recommended):** `#+=` opens a **second symbols page** (like G-board) rather than
-      being a no-op — add a second symbols layer page with a wider glyph set and let `#+=` /
-      `ABC` toggle between pages. The design doc only draws one symbols page, so this is an
-      extension, not a transcription.
-- [ ] Emoji layer: 3 rows of 8, transparent keys
-      **Decision (recommended):** the bottom-row `☺` special key **opens the emoji layer** (toggles
-      to L4), like G-board; the `,` special-key variant inserts a literal comma. Do not insert the
-      literal ☺ glyph. (MANUAL if you prefer ☺ to type the literal emoji.)
-- [ ] Optional numbers row (permanent top row, fn-styled at `scale 0.32`) — note it **replaces**
+      **Decision (CONFIRMED 2026-08-06):** `#+=` opens a **second symbols page**. `Layer` is
+      therefore `LETTERS | SYMBOLS_1 | SYMBOLS_2 | EMOJI`. Page two carries brackets, math,
+      currency and typographic marks (`[ ] { } # % ^ * + =` / `_ \ | ~ < > € £ ¥ •`) — chosen to
+      cover what page one omits. `#+=` advances, `123` returns, `ABC` leaves symbols from either
+      page. A test asserts page two never drifts structurally from the page the doc actually draws.
+- [x] Emoji layer: 3 rows of 8, transparent keys
+      **Decision (CONFIRMED 2026-08-06):** the bottom-row `☺` special key **opens the emoji layer**;
+      the `,` variant commits a literal comma. Without this nothing in the design reaches L4.
+- [x] Optional numbers row (permanent top row, fn-styled at `scale 0.32`) — note it **replaces**
       the per-key hints when enabled (`keyHints = false` in frame L5)
+      → encoded as `KeyboardConfig.effectiveKeyHints`, so no caller has to remember the interaction.
+      Also skipped on the emoji layer, per `layer !== 'emoji'` in the source.
+
+**Beyond the checklist**, because the row model was the right place for them:
+
+- **`KeyAction`** — a sealed hierarchy declaring what each key *does* (`Commit`, `SwitchLayer`,
+  `Shift`, `Backspace`, `Space`, `Action`, `ToggleAutoCorrect`). Phase 4 interprets these; declaring
+  them here means the renderer, the hit-tester and the commit path cannot drift apart.
+- **`ShiftState`** — the **four** logical states spike 0.7 found in AOSP `KeyboardState.java`,
+  rendering as **three** visuals. `MANUAL` and `AUTOMATIC` deliberately look identical; a test
+  asserts that so the distinction is not "simplified away" later.
+  One departure recorded: the mockup has a plain `shift` boolean and draws only **two** visuals
+  (`⇧` fn / `⇪` accent). The roadmap's 3.2 asks for three. Implemented as the superset —
+  OFF `⇧` fn, MANUAL/AUTOMATIC `⇧` accent, LOCKED `⇪` accent.
+- **`TouchThresholds`** — spike 0.7's noise-rejection (12.6dp / 40ms) and hysteresis (8dp) numbers,
+  with the stateless predicates. Phase 4.2 owns the stateful side.
+- **Stable positional key ids** (`r2c4`), assigned in a post-pass. Needed for per-key press state
+  and Compose `key()` calls; positional rather than label-derived because labels repeat — `.`
+  appears both in the symbols punctuation row and on the bottom row.
 
 ### 3.2 Layers & states
 

@@ -5,7 +5,6 @@ import androidx.compose.foundation.layout.BoxScope
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.text.BasicText
 import androidx.compose.runtime.Composable
-import androidx.compose.runtime.Immutable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.drawBehind
@@ -25,28 +24,8 @@ import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
 import com.musa.atomkeys.engine.AtomDimens
+import com.musa.atomkeys.engine.KeyKind
 import com.musa.atomkeys.engine.LabelScale
-
-/**
- * A keycap's visual family, from the design doc's `keyStyle(kind)` switch.
- *
- * This is *appearance*, not behaviour: `123`, shift and backspace are all [FN] even though they do
- * unrelated things. What a key does belongs to the layout model in Phase 3.
- */
-@Immutable
-enum class KeyKind {
-    /** Letters, symbols, the spacebar and `.` — [AtomTheme.key] fill, [AtomTheme.keyEdge] border. */
-    KEY,
-
-    /** Shift, backspace, `123`/`ABC`, `#+=`, the special key, `AC` — [AtomTheme.fnKey] fill. */
-    FN,
-
-    /** The ✓ key, and shift when locked — [AtomTheme.accent] fill, no separate border colour. */
-    ACCENT,
-
-    /** Emoji-layer keys — fully transparent, no border, no shadow. */
-    EMOJI,
-}
 
 /**
  * One keycap: the design's raised slab, drawn rather than elevated.
