@@ -26,20 +26,21 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.BasicText
-import androidx.compose.runtime.Composable
 import androidx.compose.foundation.rememberScrollState
+import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.ui.input.pointer.pointerInteropFilter
-import android.view.MotionEvent
 import androidx.compose.ui.draw.alpha
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Brush
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.input.pointer.PointerEventPass
+import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import com.musa.atomkeys.design.AtomKeyboardTheme
@@ -62,7 +63,9 @@ import com.musa.atomkeys.engine.Gesture
 import com.musa.atomkeys.engine.KeyAction
 import com.musa.atomkeys.engine.KeySize
 import com.musa.atomkeys.engine.KeyboardConfig
+import com.musa.atomkeys.engine.KeyboardGeometry
 import com.musa.atomkeys.engine.KeyboardLayout
+import com.musa.atomkeys.engine.KeyPressTracker
 import com.musa.atomkeys.engine.Row as LayoutRow
 import com.musa.atomkeys.engine.RowItem
 
@@ -82,13 +85,15 @@ import com.musa.atomkeys.engine.RowItem
  *   above and need no band. Callers embedding the keyboard in ordinary UI — the settings live
  *   preview (5.2), screenshot tests (8.4) — pass `false`.
  * @param pressedKeyId the [RowItem.Key.id] currently held down, or `null`. A parameter in Phase 3;
- *   Phase 4.2 drives it from per-pointer tracking.
+ *   Phase 4.2 supersedes it for real touches — previews still use it to pin a pressed key.
  * @param invisible frame L7. Deliberately **not** part of [KeyboardConfig]: it changes nothing
  *   about which keys exist, and `KeyboardLayout.rows()` never reads it.
  * @param gesture the G1–G5 affordance to draw over the grid (a gradient trail plus the accent pill
  *   that labels it), or `null`. **Debug-only per the Phase 3.3 decision** — the frames call it
  *   "trail + pill shown at M swipe length" and call it an *annotation*, and showing it on every
  *   keystroke would be noise. The service never passes one; only previews and the dogfood flag do.
+ * @param onAction receives the [KeyAction] resolved from a completed press. Phase 4.2 drives this
+ *   from raw pointer events; the service interprets it against the `Editor`.
  */
 @Composable
 fun AtomKeyboard(
@@ -130,22 +135,103 @@ fun AtomKeyboard(
                 ) {
                     if (showStrip) CandidateStrip(candidates, theme)
 
-                    rows.forEach { row ->
-                        when (row) {
-                            is LayoutRow.MiddleRule -> MiddleRule(theme, keySize)
-                            is LayoutRow.Keys -> KeyRow(
-                                row = row,
-                                theme = theme,
-                                keySize = keySize,
-                                invisible = invisible,
-                                pressedKeyId = pressedKeyId,
-                                onAction = onAction,
-                            )
-                        }
-                    }
+                    Grid(
+                        rows = rows,
+                        theme = theme,
+                        keySize = keySize,
+                        invisible = invisible,
+                        previewPressedKeyId = pressedKeyId,
+                        onAction = onAction,
+                        modifier = Modifier.fillMaxWidth(),
+                    )
                 }
 
                 if (gesture != null) GestureAffordance(gesture, theme, keySize, Modifier.matchParentSize())
+            }
+        }
+    }
+}
+
+/**
+ * The keyboard grid: the rows from [KeyboardLayout] plus the touch handling that resolves presses
+ * to key actions.
+ *
+ * The grid is its own composable so the [pointerInput] modifier's coordinate space **is the grid's
+ * coordinate space**. [KeyboardGeometry] resolves key rects arithmetically from the same weights
+ * the renderer lays out, in one coordinate space (origin = top-left of the grid) — exactly what the
+ * spike-0.3 failure demanded. A [pointerInput] here reports positions in that same space, so no
+ * offset math or bounds scanning ever enters the picture.
+ *
+ * Press state (which keys are visually down) is held in snapshot state so only the touched keys
+ * recompose — spike 0.3 measured that as +1 per press, not +26.
+ *
+ * @param previewPressedKeyId the pinned pressed key from a Phase 3 caller (previews), or null.
+ *   Live touches take precedence; when no pointer is down, a pinned key is still shown pressed so
+ *   the L1 press-bubble preview keeps working.
+ */
+@Composable
+private fun Grid(
+    rows: List<LayoutRow>,
+    theme: AtomTheme,
+    keySize: KeySize,
+    invisible: Boolean,
+    previewPressedKeyId: String?,
+    onAction: (KeyAction) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var livePressed by remember { mutableStateOf(emptySet<String>()) }
+    val density = LocalDensity.current
+
+    Column(
+        modifier
+            .pointerInput(rows) {
+                val geometry = KeyboardGeometry.resolve(
+                    rows = rows,
+                    keySize = keySize,
+                    widthPx = size.width.toFloat(),
+                    densityPxPerDp = density.density,
+                )
+                val tracker = KeyPressTracker(
+                    resolveKey = { x, y -> geometry.keyAt(x, y) ?: geometry.nearestKeyTo(x, y) },
+                    densityPxPerDp = density.density,
+                )
+                awaitPointerEventScope {
+                    while (true) {
+                        val event = awaitPointerEvent(PointerEventPass.Initial)
+                        val timeMillis = event.uptimeMillis
+                        event.changes.forEach { change ->
+                            val x = change.position.x
+                            val y = change.position.y
+                            when {
+                                change.changedToDownIgnoreConsumed() ->
+                                    tracker.onDown(change.id, x, y, timeMillis)
+
+                                change.changedToUpIgnoreConsumed() ->
+                                    tracker.onUp(change.id, x, y, timeMillis)?.let(onAction)
+
+                                change.pressed ->
+                                    tracker.onMove(change.id, x, y)
+                            }
+                        }
+                        livePressed = tracker.pressedKeyIds
+                    }
+                }
+            },
+        verticalArrangement = Arrangement.spacedBy(keySize.gap),
+    ) {
+        rows.forEach { row ->
+            when (row) {
+                is LayoutRow.MiddleRule -> MiddleRule(theme, keySize)
+                is LayoutRow.Keys -> KeyRow(
+                    row = row,
+                    theme = theme,
+                    keySize = keySize,
+                    invisible = invisible,
+                    pressedKeyIds = livePressed.ifEmpty {
+                        previewPressedKeyId?.let { setOf(it) } ?: emptySet()
+                    },
+                    onAction = onAction,
+                )
             }
         }
     }
@@ -267,7 +353,7 @@ private fun KeyRow(
     theme: AtomTheme,
     keySize: KeySize,
     invisible: Boolean,
-    pressedKeyId: String?,
+    pressedKeyIds: Set<String>,
     onAction: (KeyAction) -> Unit,
 ) {
     Row(
@@ -283,7 +369,7 @@ private fun KeyRow(
                     key = item,
                     theme = theme,
                     invisible = invisible,
-                    pressed = item.id == pressedKeyId,
+                    pressed = item.id in pressedKeyIds,
                     onAction = onAction,
                 )
             }
